@@ -46,9 +46,66 @@
     // eine neue session beginnen bzw. mit alter (serverseitiger) weiterarbeiten
     //session_start();
 
+    //////////////////////////////////////////////
+    // declare some functions for global use
+    //
     function getValueFromURLSave($key) {
         return isset($_GET[$key])?htmlentities($_GET[$key],ENT_QUOTES):''; 
     }
+
+    function cron_stop() {
+        $cronjobs=(int)shell_exec('crontab -l|grep gdcbox |wc -l');
+        echo "<p>Currently $cronjobs device".($cronjobs!=1?'s are':'is').' running</p>';
+        $tmpfile='/tmp/gdcbox.'.getmypid();
+        shell_exec('crontab -l|grep -v gdcbox > '.$tmpfile);
+        shell_exec('crontab '.$tmpfile);
+        unlink($tmpfile);
+    }
+
+    function cron_start() {
+        global $pdo;
+        global $cronjob_logfile, $cronjob_script_path;
+        $query = $pdo->prepare("SELECT id,interval_min,name,active FROM devices ORDER BY id ASC");
+        $query->execute();
+        // to reduce load, each minute only one processes is started 
+        $proc_num=0;
+        $tmpfile='/tmp/gdcbox.'.getmypid();
+        shell_exec('crontab -l > '.$tmpfile);
+        $line_end=" # gdcbox\n"; 
+        file_put_contents($tmpfile,"################".$line_end,FILE_APPEND);
+        file_put_contents($tmpfile,"gdcbox_logfile=".$cronjob_logfile.$line_end,FILE_APPEND);
+        file_put_contents($tmpfile,"gdcbox_cronjob=".$cronjob_script_path.$line_end,FILE_APPEND);
+        $crontime="";
+        while ( $row = $query->fetch() ) {
+            if ($row['active']=="no") continue;
+            if (is_numeric($row['interval_min']))
+                $crontime='*/'.$row['interval_min'].' * * * * ';
+            else {
+                // check if interval has crontab-time-format
+                if (preg_match('/^(([^\s]+)\s){5}/',$row['interval_min']))
+                    $crontime=$row['interval_min'];
+                else {
+                    echo "<p>Warning: Interval ".$row['name']. "(id=".$row['id'].") incorrect. ".
+                         "Setting to 5 Minutes</p>";
+                    $crontime  ='*/5 * * * * ';   
+                }
+            }
+            // build crontab-entry
+            $cronjob=$crontime.'$gdcbox_cronjob '.$row['id'].
+                     ' >> $gdcbox_logfile 2>&1 # '.$row['name'].$line_end;
+            echo '<p>adding cronjob ['.$cronjob.']</p>';
+            file_put_contents($tmpfile,$cronjob,FILE_APPEND);
+            $proc_num++;
+        }
+        // now make temp-crontab to new crontab
+        if ($proc_num) {
+            shell_exec('crontab '.$tmpfile);
+            unlink($tmpfile);
+        }
+        return $proc_num;
+    }
+
+
 
 
     require_once($classinc);
@@ -101,8 +158,16 @@
             $columns=3;
             do {
                 if ($appcount % $columns == 1) echo '<tr>';
-                echo '<td bgcolor="#ddd"><table border="0" cellspacing="10" width="130" >';
-                echo '<tr><td style="font-size:small">'.$row['description'].'</td></tr>';
+                // colors: grey=inactive, green=active, blue=do not send to gdc
+                if ($row['active']=="no") $bgcolor='bgcolor="#ddd"';
+                elseif ($row['gdc_send']=="no") $bgcolor='bgcolor="#6899d3"';
+                else $bgcolor='bgcolor="#65e080"';
+                //echo '<td bgcolor="'.$bgcolor.'" valign="bottom">';
+                echo '<td '.$bgcolor.' valign="bottom">';
+                
+                echo '<table border="0" cellspacing="10" width="130">';
+                //echo '<tr><td style="font-size:small">'.$row['description'].'</td></tr>';
+                echo '<tr><td style="font-size:small">'.$row['location'].'</td></tr>';
                 echo '<tr><td>';
                 // configure
                 echo '<form action="'.$myurl.'" method="get">';
@@ -111,9 +176,6 @@
                 echo '<input type="submit" value=" Configure... "></form>';
                 echo '</td></tr>';
                 echo '<tr><td align="center" style="font-weight:bold">'.$row['name'].'</td></tr>';
-                echo '<tr><td style="font-size:x-small">'.
-                     '<a href="'.$myurl.'?action=removedevice&device_id='.$row['id'].'">'.
-                     'Remove Device</a></td></tr>';
                 echo '</table></td>';
                 if ($appcount % $columns == 0) echo '</tr>';
                 $appcount++;
@@ -137,14 +199,21 @@
 
         echo '<h2>Operation Mode</h2>';
         $cronjobs=(int)shell_exec('crontab -l| grep gdcbox |wc -l');
-        echo '<p>GDCBox is <span style="color:'.($cronjobs>0?'green">':'red">not').' running.</span></p>';
+        echo '<table boder="0"><tr>';
+        echo '<td>GDCBox is <span style="color:'.($cronjobs>0?'green">':'red">not').' running.</span></td>';
         // start/stop button
-        echo '<p><form action="'.$myurl.'" method="get">';
+        echo '<td><form action="'.$myurl.'" method="get">';
         echo '<input type="hidden" name="action" value="gdcbox_'.($cronjobs>0?'stop':'start').'">';
-        echo '<input type="submit" value=" '.($cronjobs>0?'Stop':'Start').' "></form></p>';
+        echo '<input type="submit" value=" '.($cronjobs>0?'Stop':'Start').' "></form></td>';
+        // when running, add restart-button
+        if ($cronjobs>0) {
+            echo '<td><form action="'.$myurl.'" method="get">';
+            echo '<input type="hidden" name="action" value="gdcbox_restart">';
+            echo '<input type="submit" value=" Restart "></form></td>';
+        }
+        echo "</table></p>";
         
         echo '<h2>GDCBox Administration</h2>';
-
         echo '<p><table border="1">';
         echo '<tr><td>Current Date & Time</td><td> <b>'.date("Y-m-d H:i:s").'</b></td></tr>';
         $data = shell_exec('uptime');
@@ -377,6 +446,13 @@
         
         $device=new Device();
         $device->loadDeviceFromDB($device_id);
+        
+        // remove device button
+        echo '<p><form action="'.$myurl.'" method="get">';
+        echo '<input type="hidden" name="action" value="removedevice">';
+        echo '<input type="hidden" name="device_id" value="'.$device->device_values['id'].'">';
+        echo '<input type="submit" value=" Remove Device "></form></p>';
+        
         // show device params
         echo '<form action="'.$myurl.'" method="get">';
         echo '<input type="hidden" name="action" value="configuredevice_ok">';
@@ -387,9 +463,10 @@
             echo "<tr>";
             switch ($key) {
                 case 'id':
-                    echo '<td>'.$key.'</td><td>'.$value.'</td>';break;
+                    echo '<td>'.$key.'</td><td bgcolor="#ddd">'.$value.'</td>';break;
                 case 'generic_device_name':
-                    echo '<td>App</td><td><a href="xxx">'.$value.'</a></td>';break;
+                    //echo '<td>Device App</td><td><a href="xxx">'.$value.'</a></td>';break;
+                    echo '<td>Device App</td><td bgcolor="#ddd">'.$value.'</td>';break;
                 default:
                     echo '<td>'.$key.'</td><td><input type="text" size="50" name="'.$key.
                          '" value="'.$value.'"></td>';
@@ -417,21 +494,24 @@
         $device_id=getValueFromURLSave('device_id');
         $device=new Device();
         $device->loadDeviceFromDB($device_id);
-        //echo "<p>vorher:</p>"; var_dump($device->device_values); echo "<p></p>";
-        foreach ($device->device_values as $key => $value ) 
+        // save values from html-form to device
+        foreach ($device->device_values as $key => $value )
             if ($key!='id' && $key!='generic_device_name')
                 $device->device_values[$key]=html_entity_decode(getValueFromURLSave($key));
-        //echo "<p>nacher:</p>"; var_dump($device->device_values); echo "<p></p>";
-        //echo "<p>vorher:</p>"; var_dump($device->device_config_values); echo "<p></p>";
         foreach ($device->device_config_values as $key => $value) 
             if ($key!='NumValues')
                 $device->device_config_values[$key]=html_entity_decode(getValueFromURLSave($key));
-        //echo "<p>nacher:</p>"; var_dump($device->device_config_values); echo "<p></p>";
         
-
         $device->saveDeviceToDB();
         echo '<p>Saved.</p>';
         
+        // check, if restart is required
+        if ( $device->device_values['active']!="no" ) {
+            echo "<p>Restarting...</p>";
+            cron_stop();
+            $processes_started=cron_start();
+            echo "<p>Restarting done.</p>";
+        }
 
     } else if ($action=='removedevice') {
 
@@ -446,47 +526,32 @@
     } else if ($action=='gdcbox_start') {
 
         echo '<h2>Starting GDCBox</h2>';
+        
 
-        $query = $pdo->prepare("SELECT id,interval_min,name FROM devices ORDER BY id ASC");
-        $query->execute();
-        // to reduce load, each minute only one processes is started 
-        $start_min=0;
-        $tmpfile='/tmp/gdcbox.'.getmypid();
-        shell_exec('crontab -l > '.$tmpfile);
-        $line_end=" # gdcbox\n"; 
-        file_put_contents($tmpfile,"################".$line_end,FILE_APPEND);
-        file_put_contents($tmpfile,"gdcbox_logfile=".$cronjob_logfile.$line_end,FILE_APPEND);
-        file_put_contents($tmpfile,"gdcbox_cronjob=".$cronjob_script_path.$line_end,FILE_APPEND);
-        while ( $row = $query->fetch() ) {
-            $cronjob='*/'.$row['interval_min'].' * * * * $gdcbox_cronjob '.$row['id'].
-                     ' >> $gdcbox_logfile 2>&1 # '.$row['name'].$line_end;
-            echo '<p>adding cronjob ['.$cronjob.']</p>';
-            file_put_contents($tmpfile,$cronjob,FILE_APPEND);
-            $start_min++;
-        }
+        $processes_started=cron_start();
 
-        if ($start_min) {
-            shell_exec('crontab '.$tmpfile);
-            unlink($tmpfile);
-            echo "<p>GDCBox started ($start_min Device Processes running)</p>";
-        } else {
-            echo '<p>Nothing to be started. Install devices first.<p>';
-        }
+        if ($processes_started)
+            echo "<p>GDCBox started ($processes_started Device Processes running)</p>";
+        else
+            echo '<p>Nothing to be started. Install or activate devices first.<p>';
 
     } else if ($action=='gdcbox_stop') {
 
         echo '<h2>Stopping GDCBox</h2>';
-
-        $cronjobs=(int)shell_exec('crontab -l|grep gdcbox |wc -l');
-        echo "<p>Currently $cronjobs device".($cronjobs!=1?'s are':'is').' running</p>';
-        echo "<p>Stopping all devices ...";
-        $tmpfile='/tmp/gdcbox.'.getmypid();
-        shell_exec('crontab -l|grep -v gdcbox > '.$tmpfile);
-        shell_exec('crontab '.$tmpfile);
-        unlink($tmpfile);
-        echo 'done</p>';
-        
+        cron_stop();
+        echo "<p>All Device Apps stopped.</p>";
         echo "<p>GDCBox stopped.</p>";
+        
+    } else if ($action=='gdcbox_restart') {
+        
+        echo '<h2>Restarting GDCBox</h2>';
+        cron_stop();
+        echo "<p>All Device Apps stopped.</p>";
+        $processes_started=cron_start();
+        if ($processes_started)
+            echo "<p>GDCBox restarted ($processes_started Device Processes running)</p>";
+        else
+            echo '<p>Nothing to be restarted. Install devices first.<p>';
 
     } else if ($action=='gdcbox-info') {
 
@@ -530,7 +595,7 @@
         echo "</code></pre>";
     }
 
-    $_SESSION['lastaction']=$action;  // speichern, um bei reloads dopplung zu verhindern
+    //$_SESSION['lastaction']=$action;  // speichern, um bei reloads dopplung zu verhindern
     
     if ( $action != 'main' )
         echo '<p><a href="'.$myurl.'?action=main">Back</a></p>';
