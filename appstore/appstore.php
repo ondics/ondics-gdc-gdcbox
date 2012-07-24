@@ -6,10 +6,11 @@
     // später können anstelle .inc auch .zip dazukommen für mehrere dateien (incl.
     // bilder etc.)
     $applist = array (
-        array( 'name'=>'Lufft WS600', 'ver'=>'0.0.1', 'file'=>'lufft_ws600.inc' ),
-        array( 'name'=>'Lufft L2P',   'ver'=>'0.0.1', 'file'=>'lufft_l2p.inc' ),        
-        array( 'name'=>'AVR Net IO',  'ver'=>'0.0.1', 'file'=>'avrnetio.inc' ),        
-        array( 'name'=>'Testdevice',  'ver'=>'0.0.1', 'file'=>'testdevice.inc' )
+        array( 'name'=>'Lufft WS600',       'ver'=>'0.0.1', 'file'=>'lufft_ws600.inc' ),
+        array( 'name'=>'Lufft L2P',         'ver'=>'0.1.0', 'file'=>'lufft_l2p.inc' ),        
+        array( 'name'=>'AVR Net IO',        'ver'=>'1.0.0', 'file'=>'avrnetio.inc' ),        
+        array( 'name'=>'Testdevice',        'ver'=>'0.0.1', 'file'=>'testdevice.inc' ),
+        array( 'name'=>'Testdevice Mini',   'ver'=>'1.0.0', 'file'=>'testdevice_mini.inc' )        
     );
 
 
