@@ -1,19 +1,62 @@
 <?php
 
 class Device {
-    //protected $device_name,$name,$name_long,$description,$version,$url,$date_installed;
-    protected $generic_device_specs = array(); // filled by subclass
-    protected $device_defaults = array(); // filled by subclass
-    protected $device_config_defaults = array(); // filled by subclass
-    // values from db
+    
+    // default values, set in subclasses
+    protected $generic_device_specs = array();
+    protected $device_defaults = array();
+    protected $device_config_defaults = array();
+    // parameters from db
     public $device_values = array(); 
     public $device_config_values = array(); 
-    
-    private $loaded = false;
+    // current status
+    private $loaded = false;        // device_values loaded from db?
+    public $error = "";             // status of last operation
+    public $values = array();       // last values read from device
+
 
     function isLoaded() {
         return $this->loaded;
     }
+   
+    function setDefaultValues() {
+        $this->generic_device_specs = array(
+            'version'=>'0.0.0',
+            'name'=>'',
+            'name_long'=>'',
+            'description'=>'',
+            'url'=>'',
+            'appfile'=>''
+        );  
+        $this->device_defaults = array(
+            'name'=>'',
+            'description'=>'',
+            'location'=>'',
+            'interval_min'=>'5',
+            'gdc_sid'=>'===***unset***===',
+            'generic_device_name'=>'',
+            'active'=>'no',
+            'gdc_send'=>'no'
+        );
+        $this->device_config_defaults = array(
+            'IP-Address'=>'',
+            'Port'=>'',
+            'NumValues'=>'1',
+            '0_Description'=>'',
+            '0_Formula'=>'$value'
+        );
+    }
+    
+    function checkDefaultValues() {
+        // check generice_device values
+        if (!isset($this->generic_device_specs['version'])) die("init error: version missing");
+        if (!isset($this->generic_device_specs['name']))    die("init error: name unset");
+        if (!isset($this->generic_device_specs['appfile'])) die("init error: appfile unset");
+
+        // check device_default values
+        $this->device_defaults['name']=$this->generic_device_specs['name'];
+        $this->device_defaults['generic_device_name']=$this->generic_device_specs['name'];
+    }    
     
     function createNewGenericDeviceInDB() {
         global $pdo;
@@ -22,7 +65,8 @@ class Device {
         $fieldnames="";
         foreach ( $this->generic_device_specs as $field => $value) {
             $fieldnames.=($fieldnames==""?"":", ").$field;
-            $values.=($values==""?"":", ").(is_int($value)?$value:("'".$value."'"));
+            //$values.=($values==""?"":", ").(is_int($value)?$value:("'".$value."'"));
+            $values.=($values==""?"":", ")."'".$value."'";
         }
         $fieldnames.=",date_installed";
         $values.=", '".date("Y-m-d H:i:s")."'";
@@ -66,7 +110,8 @@ class Device {
         $fieldnames="";
         foreach ( $this->device_defaults as $field => $value) {
             $fieldnames.=($fieldnames==""?"":", ").$field;
-            $values.=($values==""?"":", ").(is_int($value)?$value:("'".$value."'"));
+            //$values.=($values==""?"":", ").(is_int($value)?$value:("'".$value."'"));
+            $values.=($values==""?"":", ")."'".$value."'";
         }
         $sql="INSERT INTO devices (".$fieldnames.") VALUES (".$values.")";
         $pdo->exec($sql);
@@ -103,13 +148,15 @@ class Device {
     function saveDeviceToDB() {
         global $pdo;
         if (!$this->loaded) return;
-        $pdo->exec("UPDATE devices  ".
-                   "SET name='".$this->device_values['name']."',".
-                   "description='".$this->device_values['description']."',".
-                   "location='".$this->device_values['location']."',".
-                   "interval_min=".$this->device_values['interval_min'].",".
-                   "gdc_sid='".$this->device_values['gdc_sid']."' ".
-                   "WHERE id=".$this->device_values['id']);
+        $sqlfields="";
+        foreach ($this->device_values as $key => $value) {
+            switch ($key) {
+                case 'generic_device_name': break;
+                case 'id': break;
+                default: $sqlfields.=($sqlfields==""?"":", ").$key."='".$value."'";
+            }
+        }
+        $pdo->exec("UPDATE devices SET ".$sqlfields." WHERE id=".$this->device_values['id']);
         foreach ($this->device_config_values as $key => $value) 
             if ($key!='NumValues')
                 $pdo->exec("UPDATE device_configs SET value='".$value."' ".
@@ -125,6 +172,19 @@ class Device {
         echo "<p>removing device</p>";
         $pdo->exec("DELETE FROM devices WHERE id=".$id);
     }
+    
+    // for a single value do some postprocessing: the value
+    // is calculated with "n_Formula"-field
+    function getValuesFromDevicePostprocessingValue($numValue,$value) {
+        $error="";
+        $phpcode='$value=('.$this->device_config_values[$numValue."_Formula"].');';
+        $eval_ok=eval($phpcode);
+        if ($eval_ok===FALSE)
+            $error=" eval failed for value [$i].";
+        $this->values[$numValue]=$value;
+        return $error;
+    }
+
 
 }
 
