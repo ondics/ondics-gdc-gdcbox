@@ -12,7 +12,6 @@ TODOs
 - WS500 konkret einbinden
 - Installation/Test/Distro für Raspberry PI
 - Oberfläche auf JQuery(mobile) umstellen
-- Automatic Restart Cronjobs nach Änderungen
 - Anzeige-Geräte einbauen (Aktoren)
 
 
