@@ -54,14 +54,22 @@
     $device_id=$argv[1];
 
     // load device-app
-    $query = $pdo->prepare("SELECT gd.appfile FROM devices d, generic_devices gd ".
+    $query = $pdo->prepare("SELECT gd.appfile,d.active,d.gdc_send ".
+                           "FROM devices d, generic_devices gd ".
                            "WHERE d.generic_device_name=gd.name ".
                            "AND d.id=".$device_id);
     $query->execute();
     $row = $query->fetch();
     if (!$row)
         output("error: device_id [".$device_id."] incorrect",true);
-
+    
+    // do we have to send values later on?
+    $gdc_send=($row[2]=="no")?false:true;
+    
+    // if app is not active, then stop!
+    if ($row[1]=="no")
+        output("error: device (id=".$device_id.") is not set active",true);
+        
     // load dynamic device app code
     $appfile=$row[0];
     require_once($apppath."/".$row[0]);
@@ -71,33 +79,36 @@
     $device=new $classname();
     $device->loadDeviceFromDB($device_id);
     if (!$device->isLoaded())
-        output("error: device [".$classname."] not found",true);
+        output("error: device [".$classname."] not found in db",true);
     
-    // prepare GDC-Url 
-    $gdc_url=$gdc_baseurl."?sid=".$device->device_values['gdc_sid'];
-
+    $ipaddress=$device->device_config_values['IP-Address'];
     // do some logging...
-    output("Device ".$device->device_values['name'].
-           " (id=".$device_id.", ".$device->device_config_values['IP-Address'].")");
-
+    output("Device ".$device->device_values['name']." (id=".$device_id.", ipaddr=".$ipaddress.")");
+    
     // check if ip-address ist set 
-    if (strncmp($device->device_config_values['IP-Address'],"0.0.",4)===0)
+    if (strncmp($ipaddress,"0.0.",4)===0 || strlen(trim($ipaddress))==0 )
         output("error: ip-address unconfigured",true);
 
     // now request values from device
     $error=$device->getValuesFromDevice();
     if ($error!="") output("error: ".$error,true);
         
-    // generate gdc url from values
+    // prepare GDC-Url 
+    $gdc_url=$gdc_baseurl."?sid=".$device->device_values['gdc_sid'];
+    // add values to gdc url 
     for ($i=0; $i<$device->device_config_values['NumValues']; $i++) {
         if ($device->values[$i]!="")
             $gdc_url.="&value".$i."=".$device->values[$i];
     }
-    
-    // finally send values to GDC
-    //echo "gdc_url=[$gdc_url]\n";
+
     output("GDC-Request: ".$gdc_url);
-    output("****** GDC-Request fehlt noch!");
+    
+    // finally send values to GDC (if send-flag is set!)
+    // if app is not active, then stop!
+    if ($gdc_send) {
+        output("****** GDC-Request fehlt noch!");
+    } else 
+        output("Warning: do not send to GDC (as configured)");
 
     // db-connectivity schlieﬂen
     unset($pdo);
