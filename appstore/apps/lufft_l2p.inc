@@ -1,59 +1,43 @@
 <?php
-// needs classinc to be set!
+//require_once('classes.inc');
 
 
 class lufft_l2p extends Device {
 
-    public $values = array();
-    public $error = "";
-
     function setDefaultValues() {
-        $this->generic_device_specs = array(
-            'version'=>'0.0.1',
-            'name'=>'Lufft L2P',
-            'name_long'=>'Lufft L2P Device, z.B. ein OPUS20',
-            'description'=>'weiße Ware für Indoor!',
-            'url'=>'http://srv1.ondics.de/appstore/devicehelp.html',
-            'appfile'=>'lufft_l2p.inc'
-        );
-            
-        $this->device_defaults = array(
-            'name'=>$this->generic_device_specs['name'],
-            'description'=>'Gerät wurde 2012 von Lufft zu Testzwecken überlassen',
-            'location'=>'Gerät ist aufgestellt in Straße/PLZ/Ort',
-            'interval_min'=>1,
-            'gdc_sid'=>'===***unset***===',
-            'generic_device_name'=>$this->generic_device_specs['name']
-        );
-        
-        $this->device_config_defaults = array(
-            'IP-Address'=>'0.0.0.0',
-            'Port'=>52015,
-            'NumValues'=>7,
-            '0_Channel'=>'A0 00',  // in reverse hex!
-            '0_Description'=>'Temperature avg. in °C',
-            '0_Formula'=>'$value',
-            '1_Channel'=>'2C 01',
-            '1_Description'=>'abs. air pressure in hPa',
-            '1_Formula'=>'$value',  
-            '2_Channel'=>'C8 00',
-            '2_Description'=>'relative humidity in %',
-            '2_Formula'=>'$value',  
-            '3_Channel'=>'6E 00',
-            '3_Description'=>'dewpoint in %',
-            '3_Formula'=>'$value',  
-            '4_Channel'=>'24 27',
-            '4_Description'=>'battery voltage in V',
-            '4_Formula'=>'$value',  
-            '5_Channel'=>'31 01',
-            '5_Description'=>'rel. air pressure in hPa',
-            '5_Formula'=>'$value',  
-            '6_Channel'=>'CD 00',
-            '6_Description'=>'absolute humidity in %',
-            '6_Formula'=>'$value',  
-            
-        );        
-    }
+        parent::setDefaultValues();
+        $this->generic_device_specs['version']='0.1.0';
+        $this->generic_device_specs['name']='Lufft L2P';
+        $this->generic_device_specs['name_long']='Lufft L2P Device. Climatological Measurements.';
+        $this->generic_device_specs['description']='Hot. Very hot!';
+        $this->generic_device_specs['appfile']='lufft_l2p.inc';
+        $this->device_defaults['description']='OPUS20.THIP oder OPUS20...';
+        $this->device_config_defaults['Port']=52015;
+        $this->device_config_defaults['L2P-Driver-Path']='/home/clauss/git-repos/ondics-lufft-opus20/';
+        $this->device_config_defaults['NumValues']=7;
+        $this->device_config_defaults['0_Channel']='A0 00';  // in reverse hex!
+        $this->device_config_defaults['0_Description']='Temperature avg. in °C';
+        $this->device_config_defaults['0_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
+        $this->device_config_defaults['1_Channel']='2C 01';
+        $this->device_config_defaults['1_Description']='abs. air pressure in hPa';
+        $this->device_config_defaults['1_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
+        $this->device_config_defaults['2_Channel']='C8 00';
+        $this->device_config_defaults['2_Description']='relative humidity in %';
+        $this->device_config_defaults['2_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
+        $this->device_config_defaults['3_Channel']='6E 00';
+        $this->device_config_defaults['3_Description']='dewpoint in %';
+        $this->device_config_defaults['3_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
+        $this->device_config_defaults['4_Channel']='24 27';
+        $this->device_config_defaults['4_Description']='battery voltage in V';
+        $this->device_config_defaults['4_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
+        $this->device_config_defaults['5_Channel']='31 01';
+        $this->device_config_defaults['5_Description']='rel. air pressure in hPa';
+        $this->device_config_defaults['5_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
+        $this->device_config_defaults['6_Channel']='CD 00';
+        $this->device_config_defaults['6_Description']='absolute humidity in %';
+        $this->device_config_defaults['6_Formula']='round($value,3,PHP_ROUND_HALF_UP)';  
+        parent::checkDefaultValues();
+    }        
     
     function getValuesFromDevice() {
         $this->error="";
@@ -77,7 +61,8 @@ class lufft_l2p extends Device {
             // Nettodaten: (0x23,0x10,0xA0,0x00); // 0x00A0 .. durchschn. Temperatur
             //$l2p_frame=pack("C*",0x01,0x10,0x00,0x00,0x00,0x00,0x04,0x02,0x23,0x10,0xa0,0x00,0x03,0xf1,0xc4,0x04);
             $nettodaten="23 10 ".$this->device_config_values[$i.'_Channel'];
-            $l2p_frame=shell_exec('echo "'.$nettodaten.'" | /home/clauss/git-repos/ondics-lufft-opus20/l2p-frame -x ');
+            $l2p_frame=shell_exec('echo "'.$nettodaten.'" | '.
+                                  $this->device_config_values['L2P-Driver-Path'].'/l2p-frame -x ');
                                  
             //echo "frame-laenge=".strlen($l2p_frame)."\n";
             $sent=socket_write($socket, $l2p_frame, strlen($l2p_frame));
@@ -91,24 +76,21 @@ class lufft_l2p extends Device {
             $hexstring="";
             foreach ($unpacked as $val) $hexstring.=sprintf("%02X ",$val);
             //echo "hexstring=[$hexstring]\n";
-            $value=shell_exec('echo "'.$hexstring.'" | /home/clauss/git-repos/ondics-lufft-opus20/l2p-result -a ');
+            $value=shell_exec('echo "'.$hexstring.'" | '.
+                              $this->device_config_values['L2P-Driver-Path'].'/l2p-result -a ');
             //echo "value=[$value]\n";
 
             // now do some postprocessing
             if (is_numeric($value)) {
-                $phpcode='$value=('.$this->device_config_values[$i."_Formula"].');';
-                //echo "postprocessing: [".$phpcode."]\n";
-                $eval_ok=eval($phpcode);
-                if ($eval_ok===FALSE)
-                    $this->error.=" eval failed for value [$i].";
-                //echo "value=[$value]\n";
-                $this->values[$i]=$value;
+                $this->error .= parent::getValuesFromDevicePostprocessingValue($i,$value);
             } else {
                 $this->values[$i]=0;
                 $this->error.=" value [$i] ist not numeric.";
+                $this->error.="result from device is [$hexstring]. ";
             }
+
             socket_close($socket);
-            sleep(1);
+            sleep(3);
 
         }
         return $this->error;       

@@ -1,21 +1,19 @@
 <?php
 //require_once('classes.inc');
 
-class testdevice extends Device {
+class testdevice_mini extends Device {
 
     function setDefaultValues() {
         parent::setDefaultValues();        
-        $this->generic_device_specs['version']='0.0.1';
-        $this->generic_device_specs['name']='Testdevice';
-        $this->generic_device_specs['name_long']='Testdevice';
-        $this->generic_device_specs['description']='sollte nur zum Testen installiert werden';
-        $this->generic_device_specs['url']='http://srv1.ondics.de/appstore/devicehelp.html';
-        $this->generic_device_specs['appfile']='testdevice.inc';
+        $this->generic_device_specs['version']='1.0.0';
+        $this->generic_device_specs['name']='Testdevice Mini';
+        $this->generic_device_specs['name_long']='Minimales Testdevice ohne Network-Access';
+        $this->generic_device_specs['description']='Nur zum Testen';
+        $this->generic_device_specs['appfile']='testdevice_mini.inc';
         $this->device_defaults['description']='Testdevice ohne Network-Access. Liefert als Messwert immer 1';
-        $this->device_defaults['location']='auf der GDCBox';
         $this->device_config_defaults['IP-Address']='localhost';
         $this->device_config_defaults['NumValues']=1;
-        $this->device_config_defaults['0_Description']='Returns always 123';
+        $this->device_config_defaults['0_Description']='Returns always 1';
         $this->device_config_defaults['0_Formula']='$value';
         parent::checkDefaultValues();        
     }

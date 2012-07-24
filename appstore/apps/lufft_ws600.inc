@@ -1,45 +1,28 @@
 <?php
-// needs classinc to be set!
-
+//require_once('classes.inc');
 
 class lufft_ws600 extends Device {
 
-    public $values = array();
-    public $error = "";
-
     function setDefaultValues() {
-        $this->generic_device_specs = array(
-            'version'=>'0.0.1',
-            'name'=>'Lufft WS600',
-            'name_long'=>'Lufft WS 600 Präzisions-Outdoor-Wettmessstation',
-            'description'=>'Super Gerät, sehr weiß.',
-            'url'=>'http://srv1.ondics.de/appstore/devicehelp.html',
-            'appfile'=>'lufft_ws600.inc'
-        );
-            
-        $this->device_defaults = array(
-            'name'=>$this->generic_device_specs['name'],
-            'description'=>'Gerät wurde 2011 von Lufft bezogen (Inventarnummer #1234)',
-            'location'=>'Gerät ist aufgestellt in Straße/PLZ/Ort',
-            'interval_min'=>5,
-            'gdc_sid'=>'===***unset***===',
-            'generic_device_name'=>$this->generic_device_specs['name']
-        );
-        
-        $this->device_config_defaults = array(
-            'IP-Address'=>'0.0.0.0',
-            'Port'=>1470,
-            'DeviceID'=>'28673',
-            'NumValues'=>2,
-            '0_Channel'=>'00100',
-            '0_Description'=>'Temperature',
-            '0_Unit'=>'Grad Celsius',
-            '0_Formula'=>'round((70-(-30))/65520*$value+(-30),4,PHP_ROUND_HALF_UP)',  // see umb-manual, page 34
-            '1_Channel'=>'00200',
-            '1_Description'=>'Rel. Humidity',
-            '1_Unit'=>'%',
-            '1_Formula'=>'round((100-(0))/65520*$value+(+0),4,PHP_ROUND_HALF_UP)'
-        );        
+        parent::setDefaultValues();
+        $this->generic_device_specs['version']='0.0.1';
+        $this->generic_device_specs['name']='Lufft WS600';
+        $this->generic_device_specs['name_long']='Lufft WS 600 Präzisions-Outdoor-Wettmessstation';
+        $this->generic_device_specs['description']='Super Gerät, sehr weiß.';
+        $this->generic_device_specs['appfile']='lufft_ws600.inc';
+        $this->device_defaults['description']='Lufft WS 600, Montiert auf...';
+        $this->device_config_defaults['Port']=1470;
+        $this->device_config_defaults['DeviceID']='28673';
+        $this->device_config_defaults['NumValues']=2;
+        $this->device_config_defaults['0_Channel']='00100';
+        $this->device_config_defaults['0_Description']='Temperature';
+        $this->device_config_defaults['0_Unit']='Grad Celsius';
+        $this->device_config_defaults['0_Formula']='round((70-(-30))/65520*$value+(-30),4,PHP_ROUND_HALF_UP)';  // see umb-manual; page 34
+        $this->device_config_defaults['1_Channel']='00200';
+        $this->device_config_defaults['1_Description']='Rel. Humidity';
+        $this->device_config_defaults['1_Unit']='%';
+        $this->device_config_defaults['1_Formula']='round((100-(0))/65520*$value+(+0),4,PHP_ROUND_HALF_UP)';
+        parent::checkDefaultValues();
     }
     
     function getValuesFromDevice() {
@@ -72,17 +55,11 @@ class lufft_ws600 extends Device {
             $input = trim(socket_read($socket, 512 , PHP_NORMAL_READ));
             //echo "Response from server is: [".$input."]\n";
             $input_parts=explode(" ",$input);
-
+            $value=$input_parts[4];
+            
             // now do some postprocessing
-            if (is_numeric($input_parts[4])) {
-                $value=$input_parts[4];
-                $phpcode='$value=('.$this->device_config_values[$i."_Formula"].');';
-                //echo "postprocessing: [".$phpcode."]\n";
-                $eval_ok=eval($phpcode);
-                if ($eval_ok===FALSE)
-                    $this->error.=" eval failed for value [$i].";
-                //echo "value=[$value]\n";
-                $this->values[$i]=$value;
+            if (is_numeric($value)) {
+                $this->error .= parent::getValuesFromDevicePostprocessingValue($i,$value);
             } else {
                 $this->values[$i]=0;
                 $this->error.=" value [$i] ist not numeric.";

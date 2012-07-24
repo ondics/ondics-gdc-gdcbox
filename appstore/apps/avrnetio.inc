@@ -1,48 +1,32 @@
 <?php
-// needs classinc to be set!
-
+//require_once('classes.inc');
 
 class avrnetio extends Device {
 
-    public $values = array();
-    public $error = "";
-
     function setDefaultValues() {
-        $this->generic_device_specs = array(
-            'version'=>'0.0.1',
-            'name'=>'AVR Net IO',
-            'name_long'=>'Pollin-Board',
-            'description'=>'Super Gerät, total billig.',
-            'url'=>'http://srv1.ondics.de/appstore/devicehelp.html',
-            'appfile'=>'avrnetio.inc'
-        );
-            
-        $this->device_defaults = array(
-            'name'=>$this->generic_device_specs['name'],
-            'description'=>'Gerät wurde 2011 von Polin bezogen (Inventarnummer #1333)',
-            'location'=>'Gerät ist aufgestellt in Straße/PLZ/Ort',
-            'interval_min'=>5,
-            'gdc_sid'=>'===***unset***===',
-            'generic_device_name'=>$this->generic_device_specs['name']
-        );
-        
-        $this->device_config_defaults = array(
-            'IP-Address'=>'0.0.0.0',
-            'Port'=>50290,
-            'NumValues'=>4,
-            '0_Channel'=>'1',
-            '0_Description'=>'ADC1',
-            '0_Formula'=>'$value',
-            '1_Channel'=>'2',
-            '1_Description'=>'ADC2',
-            '1_Formula'=>'$value',
-            '2_Channel'=>'3',
-            '2_Description'=>'ADC3',
-            '2_Formula'=>'$value',
-            '3_Channel'=>'4',
-            '3_Description'=>'ADC4',
-            '3_Formula'=>'$value'
-        );
+        parent::setDefaultValues();        
+        $this->generic_device_specs['version']='1.0.0';
+        $this->generic_device_specs['name']='AVR Net IO';
+        $this->generic_device_specs['name_long']='Pollin-Board mit AVR-Chip';
+        $this->generic_device_specs['description']='Bestell-Nr. bei Pollin: 12345.67889. Super Gerät, total billig.';
+        $this->generic_device_specs['url']='http://srv1.ondics.de/appstore/devicehelp.html';
+        $this->generic_device_specs['appfile']='avrnetio.inc';
+        $this->device_defaults['description']='AVR-Net-IO mit Beschaltung für...';
+        $this->device_config_defaults['Port']=50290;
+        $this->device_config_defaults['NumValues']=4;
+        $this->device_config_defaults['0_Channel']='1';
+        $this->device_config_defaults['0_Description']='ADC1';
+        $this->device_config_defaults['0_Formula']='$value';
+        $this->device_config_defaults['1_Channel']='2';
+        $this->device_config_defaults['1_Description']='ADC2';
+        $this->device_config_defaults['1_Formula']='$value';
+        $this->device_config_defaults['2_Channel']='3';
+        $this->device_config_defaults['2_Description']='ADC3';
+        $this->device_config_defaults['2_Formula']='$value';
+        $this->device_config_defaults['3_Channel']='4';
+        $this->device_config_defaults['3_Description']='ADC4';
+        $this->device_config_defaults['3_Formula']='$value';
+        parent::checkDefaultValues();
     }
     
     function getValuesFromDevice() {
@@ -71,19 +55,12 @@ class avrnetio extends Device {
                      
             //echo "Sending [".substr($request,0,-1)."] to server.\n";
             socket_write($socket, $request, strlen($request));
-            $input = trim(socket_read($socket, 512 , PHP_NORMAL_READ));
+            $value = trim(socket_read($socket, 512 , PHP_NORMAL_READ));
             //echo "Response from server is: [".$input."]\n";
 
             // now do some postprocessing
-            if (is_numeric($input)) {
-                $value=$input;
-                $phpcode='$value=('.$this->device_config_values[$i."_Formula"].');';
-                //echo "postprocessing: [".$phpcode."]\n";
-                $eval_ok=eval($phpcode);
-                if ($eval_ok===FALSE)
-                    $this->error.=" eval failed for value [$i].";
-                //echo "value=[$value]\n";
-                $this->values[$i]=$value;
+            if (is_numeric($value)) {
+                $this->error .= parent::getValuesFromDevicePostprocessingValue($i,$value);
             } else {
                 $this->values[$i]=0;
                 $this->error.=" value [$i] ist not numeric.";
