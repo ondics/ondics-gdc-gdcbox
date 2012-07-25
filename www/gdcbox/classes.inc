@@ -40,7 +40,7 @@ class Device {
         );
         $this->device_config_defaults = array(
             'IP-Address'=>'',
-            'Port'=>'',
+//            'Port'=>'',
             'NumValues'=>'1',
             '0_Description'=>'',
             '0_Formula'=>'$value'
