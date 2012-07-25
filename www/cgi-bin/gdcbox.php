@@ -124,7 +124,13 @@
     // fuer navigation im footer
     $zurueckaction='.';
 
-            
+    
+    //////////////////////////////////////////
+    //
+    // main program starts here (all menu selections are here)
+    //
+    //////////////////////////////////////////
+           
     if ($action=='main') {
 
         // Date and time are unset if system is powered on
@@ -144,8 +150,21 @@
 
         // display all devices installed
         echo '<h2>Installed Devices</h2>';
-        echo '<p>Devices available on this GDCBox:</p>';
-        $query = $pdo->prepare("SELECT * FROM devices ORDER BY name ASC");
+        echo '<p>Devices available on this GDCBox (sort by ';
+        $appsort=getValueFromURLSave("appsort");
+        $appsorturlstub='<a href="'.$myurl.'?action=main&';
+        echo $appsort=='active'?'active, ':$appsorturlstub.'appsort=active">active</a>, ';
+        echo $appsort=='latest'?'latest, ':$appsorturlstub.'appsort=latest">latest</a>, ';
+        echo $appsort=='app'?'App, ':$appsorturlstub.'appsort=app">App</a>, ';
+        echo $appsort=='name'?'Name':$appsorturlstub.'appsort=name">Name</a>';
+        echo ')</p>';
+        switch ($appsort) {
+            case 'active': $sqlorderby="ORDER BY active DESC"; break; // no after yes
+            case 'latest': $sqlorderby="ORDER BY id DESC"; break; 
+            case 'app': $sqlorderby="ORDER BY generic_device_name ASC"; break;
+            default: $sqlorderby="ORDER BY name ASC";
+        }
+        $query = $pdo->prepare("SELECT * FROM devices ".$sqlorderby);
         $query->execute();
         $row = $query->fetch();
         echo '<p>';
@@ -507,10 +526,13 @@
         
         // check, if restart is required
         if ( $device->device_values['active']!="no" ) {
-            echo "<p>Restarting...</p>";
-            cron_stop();
-            $processes_started=cron_start();
-            echo "<p>Restarting done.</p>";
+            $cronjobs=(int)shell_exec('crontab -l|grep gdcbox |wc -l');
+            if ($cronjobs>0) {
+                echo "<p>Restarting...</p>";
+                cron_stop();
+                $processes_started=cron_start();
+                echo "<p>Restarting done.</p>";
+            }
         }
 
     } else if ($action=='removedevice') {
