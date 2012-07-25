@@ -101,14 +101,21 @@
             $gdc_url.="&value".$i."=".$device->values[$i];
     }
 
-    output("GDC-Request: ".$gdc_url);
     
     // finally send values to GDC (if send-flag is set!)
     // if app is not active, then stop!
     if ($gdc_send) {
-        output("****** GDC-Request fehlt noch!");
-    } else 
-        output("Warning: do not send to GDC (as configured)");
+        output("GDC-Request: ".$gdc_url);
+        if (strlen($device->device_values['gdc_sid'])!=40)
+            output("Warning: GDC-SID is missing / wrong. nothing sent");
+        else {
+            // http-request to gdc should be here!
+            output("Error: gdc-send not yet implemented",true);
+        }
+    } else {
+        output("GDC-Request should be: ".$gdc_url);
+        //output("Warning: do not send to GDC (as configured)");
+    }
 
     // db-connectivity schlieﬂen
     unset($pdo);
