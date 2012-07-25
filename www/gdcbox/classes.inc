@@ -56,6 +56,7 @@ class Device {
         // check device_default values
         $this->device_defaults['name']=$this->generic_device_specs['name'];
         $this->device_defaults['generic_device_name']=$this->generic_device_specs['name'];
+        $this->device_defaults['gdc_sid']="***===unset===***";
     }    
     
     function createNewGenericDeviceInDB() {
