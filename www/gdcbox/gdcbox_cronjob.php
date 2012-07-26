@@ -100,6 +100,8 @@
         if ($device->values[$i]!="")
             $gdc_url.="&value".$i."=".$device->values[$i];
     }
+    // add timestamp to gdc url
+    $gdc_url.="&timestamp=".date("Y-m-d")."%20".date("H:m");
 
     
     // finally send values to GDC (if send-flag is set!)
@@ -113,7 +115,7 @@
             output("Error: gdc-send not yet implemented",true);
         }
     } else {
-        output("GDC-Request should be: ".$gdc_url);
+        output("GDC-Request would be: ".$gdc_url);
         //output("Warning: do not send to GDC (as configured)");
     }
 
