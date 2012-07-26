@@ -612,9 +612,9 @@
     } else if ($action=='test-cronjoblogfile') {
         echo '<h3>Cronjob-Logfile</h3>';
         echo "<p>Last 20 Lines of ".$cronjob_logfile."</p>\n";
-        echo "<pre><code>";
-        echo shell_exec("tail -n 20 ". $cronjob_logfile);
-        echo "</code></pre>";
+        echo '<span style="font-size:smaller"><pre><code>';
+        echo htmlentities(shell_exec("tail -n 20 ". $cronjob_logfile));
+        echo "</code></pre></span>";
     }
 
     //$_SESSION['lastaction']=$action;  // speichern, um bei reloads dopplung zu verhindern
