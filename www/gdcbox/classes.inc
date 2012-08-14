@@ -124,6 +124,16 @@ class Device {
             echo "<p>sql=".$sql."</p>";
             $pdo->exec($sql);
         }
+        // then create one entry for all values of this device (format is
+        // empty value "-" separated by "|")
+        $valuesstring="";
+        for($i=0; $i<$this->device_config_defaults['NumValues'];$i++)
+            $valuesstring.=($valuesstring==""?"":"|")."-";
+        $sql="INSERT INTO device_values (device_id,timestamp,valuesstring) ".
+             "VALUES (".$device_id.",'".date("Y-m-d H:i:s")."','".$valuesstring."')";
+        echo "<p>sql=".$sql."</p>";
+        $pdo->exec($sql);        
+        
         return $device_id;
     }
 
@@ -162,6 +172,7 @@ class Device {
             if ($key!='NumValues')
                 $pdo->exec("UPDATE device_configs SET value='".$value."' ".
                      "WHERE device_id=".$this->device_values['id']." AND key='".$key."'");
+        
     }
 
     function removeDeviceFromDB($id) {
@@ -172,6 +183,10 @@ class Device {
         // second: remove device
         echo "<p>removing device</p>";
         $pdo->exec("DELETE FROM devices WHERE id=".$id);
+        // third: remove values
+        echo "<p>removing values</p>";
+        $pdo->exec("DELETE FROM device_values WHERE device_id=".$id);
+        
     }
     
     // for a single value do some postprocessing: the value
@@ -181,10 +196,34 @@ class Device {
         $phpcode='$value=('.$this->device_config_values[$numValue."_Formula"].');';
         $eval_ok=eval($phpcode);
         if ($eval_ok===FALSE)
-            $error=" eval failed for value [$i].";
+            $error=" eval failed for value [$$numValue].";
         $this->values[$numValue]=$value;
         return $error;
     }
+    
+    function saveValuesToDB() {
+        global $pdo;        
+        $valuesstring=implode("|",$this->values);
+        $sql="UPDATE device_values SET timestamp='".date("Y-m-d H:i:s")."',".
+                     "valuesstring='".$valuesstring."' ".
+                     "WHERE device_id=".$this->device_values['id'];
+        //echo "<p>sql=".$sql."</p>";
+        $pdo->exec($sql);        
+    }
+
+    // function is static for performance reasons: we don't need
+    // an instantiated object to get the values from db!
+    static function loadValuesFromDB($device_id, &$values, &$timestamp) {
+        global $pdo;
+        $query = $pdo->prepare("SELECT timestamp,valuesstring FROM device_values ".
+                               "WHERE device_id=".$device_id);
+        $query->execute();
+        $row = $query->fetch();
+        if (!$row) { return "no values found in db for device $device_id";}
+        $values=explode("|",$row['valuesstring']);
+        $timestamp=$row['timestamp'];
+  }
+
 
 
 }
