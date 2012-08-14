@@ -608,6 +608,7 @@
         dbdump("generic_devices");
         dbdump("devices");
         dbdump("device_configs");
+        dbdump("device_values");
     
     } else if ($action=='test-cronjoblogfile') {
         echo '<h3>Cronjob-Logfile</h3>';
