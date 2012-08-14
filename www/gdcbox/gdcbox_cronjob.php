@@ -91,8 +91,13 @@
 
     // now request values from device
     $error=$device->getValuesFromDevice();
-    if ($error!="") output("error: ".$error,true);
-        
+    if ($error!="") {
+        output("error: ".$error,true);
+    } else {
+        // save values to db for later (api) access
+        $device->saveValuesToDB();    
+    }
+    
     // prepare GDC-Url 
     $gdc_url=$gdc_baseurl."?sid=".$device->device_values['gdc_sid'];
     // add values to gdc url 
@@ -115,7 +120,7 @@
             output("Error: gdc-send not yet implemented",true);
         }
     } else {
-        output("GDC-Request would be: ".$gdc_url);
+        //output("GDC-Request would be: ".$gdc_url);
         //output("Warning: do not send to GDC (as configured)");
     }
 
