@@ -8,7 +8,7 @@
     $system_out=exec('uname -a');
     if ($system_out===FALSE) die("error: system-command failed\n");
     if (preg_match('/(raspberry|pi)/i',$system_out))
-        $machine_os="raspberry_pi";
+        $machine_os="raspberry-pi";
     else if (preg_match('/openwrt/i',$system_out))
         $machine_os="openwrt";
     else if (preg_match('/linux srv1/i',$system_out))
