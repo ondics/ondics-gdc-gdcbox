@@ -5,6 +5,9 @@
     //  (C) Ondics,2012
     */
 
+
+    require_once("/home/clauss/git-repos/ondics-gdc-gdcbox/www/gdcbox/platforms.inc");
+/*
     $gdcbox_version="0.1";
     $testmode=FALSE; // einblenden von "Test" in Fuﬂzeile und "logout" bei Info.
     $testmsg="";    // wird eingeblendet im footer
@@ -34,10 +37,10 @@
     $cronjob_script_path=$basepath.'/gdcbox/'.$cronjob_script;
     // cronjob logging
     $cronjob_logfile="/tmp/gdcbox_cronjob.log";
-    
+*/  
 
     // datenbankzugriff herstellen
-    if (! ($pdo=new PDO('sqlite:'.$database)) ) {
+    if (! ($pdo=new PDO('sqlite:'.$env["database"])) ) {
         echo "<html><body>Fehler: DB-Zugriff</body></html>";
         exit;
     } 
@@ -64,7 +67,7 @@
 
     function cron_start() {
         global $pdo;
-        global $cronjob_logfile, $cronjob_script_path;
+        global $env; 
         $query = $pdo->prepare("SELECT id,interval_min,name,active FROM devices ORDER BY id ASC");
         $query->execute();
         // to reduce load, each minute only one processes is started 
@@ -73,8 +76,8 @@
         shell_exec('crontab -l > '.$tmpfile);
         $line_end=" # gdcbox\n"; 
         file_put_contents($tmpfile,"################".$line_end,FILE_APPEND);
-        file_put_contents($tmpfile,"gdcbox_logfile=".$cronjob_logfile.$line_end,FILE_APPEND);
-        file_put_contents($tmpfile,"gdcbox_cronjob=".$cronjob_script_path.$line_end,FILE_APPEND);
+        file_put_contents($tmpfile,"gdcbox_logfile=".$env["cronjob_logfile"].$line_end,FILE_APPEND);
+        file_put_contents($tmpfile,"gdcbox_cronjob=".$env["cronjob_script_path"].$line_end,FILE_APPEND);
         $crontime="";
         while ( $row = $query->fetch() ) {
             if ($row['active']=="no") continue;
@@ -105,11 +108,7 @@
         return $proc_num;
     }
 
-
-
-
-    require_once($classinc);
-
+    require_once($env["classinc"]);
 
     // page selector
     $action=isset($_GET['action'])?htmlentities($_GET['action'],ENT_QUOTES):'main';
@@ -137,7 +136,7 @@
         if (strtotime(date("Y-m-d")) < strtotime("2012-05-01") ) {
             echo '<p>Date & Time seem not to is not be set. </p>';
             echo '<p>Set Date & Time now:</p>';
-            echo '<form action="'.$myurl.'" method="get">';
+            echo '<form action="'.$env["myurl"].'" method="get">';
             echo '<table><tr><td>Date</td><td>Day <input name="day" size="2"> '.
                  'Month <input name="month" size="2"> '.
                  'Year <input name="year" value="2012" size="4"></td></tr>';
@@ -152,7 +151,7 @@
         echo '<h2>Installed Devices</h2>';
         echo '<p>Devices available on this GDCBox (sort by ';
         $appsort=getValueFromURLSave("appsort");
-        $appsorturlstub='<a href="'.$myurl.'?action=main&';
+        $appsorturlstub='<a href="'.$env["myurl"].'?action=main&';
         echo $appsort=='active'?'active, ':$appsorturlstub.'appsort=active">active</a>, ';
         echo $appsort=='latest'?'latest, ':$appsorturlstub.'appsort=latest">latest</a>, ';
         echo $appsort=='app'?'App, ':$appsorturlstub.'appsort=app">App</a>, ';
@@ -189,7 +188,7 @@
                 echo '<tr><td style="font-size:small">'.$row['location'].'</td></tr>';
                 echo '<tr><td>';
                 // configure
-                echo '<form action="'.$myurl.'" method="get">';
+                echo '<form action="'.$env["myurl"].'" method="get">';
                 echo '<input type="hidden" name="action" value="configuredevice">';
                 echo '<input type="hidden" name="device_id" value="'.$row['id'].'">';
                 echo '<input type="submit" value=" Configure... "></form>';
@@ -205,7 +204,7 @@
         }
         //echo '</table>';
         echo '</p>';
-        echo '<p><a href="'.$myurl.'?action=makenewdevice">Make new Device</a></p>';
+        echo '<p><a href="'.$env["myurl"].'?action=makenewdevice">Make new Device</a></p>';
         $query = $pdo->prepare("SELECT count(*) FROM generic_devices");
         $query->execute();
         $row = $query->fetch();
@@ -214,19 +213,19 @@
             case 1: echo '<p>Currently there is <b>one app</b> installed.<br>'; break;
             default: echo '<p>Currently there are <b>'.$row[0].' apps</b> installed. '; 
         }
-        echo 'Goto <a href="'.$myurl.'?action=appstore">GDCBox AppStore</a> to manage your Apps.</p>';
+        echo 'Goto <a href="'.$env["myurl"].'?action=appstore">GDCBox AppStore</a> to manage your Apps.</p>';
 
         echo '<h2>Operation Mode</h2>';
         $cronjobs=(int)shell_exec('crontab -l| grep gdcbox |wc -l');
         echo '<table boder="0"><tr>';
         echo '<td>GDCBox is <span style="color:'.($cronjobs>0?'green">':'red">not').' running.</span></td>';
         // start/stop button
-        echo '<td><form action="'.$myurl.'" method="get">';
+        echo '<td><form action="'.$env["myurl"].'" method="get">';
         echo '<input type="hidden" name="action" value="gdcbox_'.($cronjobs>0?'stop':'start').'">';
         echo '<input type="submit" value=" '.($cronjobs>0?'Stop':'Start').' "></form></td>';
         // when running, add restart-button
         if ($cronjobs>0) {
-            echo '<td><form action="'.$myurl.'" method="get">';
+            echo '<td><form action="'.$env["myurl"].'" method="get">';
             echo '<input type="hidden" name="action" value="gdcbox_restart">';
             echo '<input type="submit" value=" Restart "></form></td>';
         }
@@ -247,8 +246,8 @@
 
         echo '<h2>System Testing</h2>';
         echo '<ul>';
-        echo '<li><a href="'.$myurl.'?action=test-dbdump">Show Database Contents</a></li>';
-        echo '<li><a href="'.$myurl.'?action=test-cronjoblogfile">Show Cronjobs-Logfile</a></li>';
+        echo '<li><a href="'.$env["myurl"].'?action=test-dbdump">Show Database Contents</a></li>';
+        echo '<li><a href="'.$env["myurl"].'?action=test-cronjoblogfile">Show Cronjobs-Logfile</a></li>';
         echo '</ul>';
         
 
@@ -278,11 +277,11 @@
         echo "<h2>GDCBox AppStore</h2>\n";
         
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $appstore_url."?action=applist");
+        curl_setopt($ch, CURLOPT_URL, $env["appstore_url"]."?action=applist");
         curl_setopt($ch, CURLOPT_HEADER, false);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY); 
-        curl_setopt($ch, CURLOPT_USERPWD, $appstore_user.':'.$appstore_pass); 
+        curl_setopt($ch, CURLOPT_USERPWD, $env["appstore_user"].':'.$env["appstore_pass"]); 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
         $return = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -306,14 +305,14 @@
                 // is app already installed?
                 if ($row) {  
                     // yes: add action "remove"
-                    echo '<td><form action="'.$myurl.'" method="get">';
+                    echo '<td><form action="'.$env["myurl"].'" method="get">';
                     echo '<input type="hidden" name="action" value="appstore_appremove">';
                     echo '<input type="hidden" name="name" value="'.$app['name'].'">';
                     echo '<input type="hidden" name="name_long" value="'.$row['name_long'].'">';
                     echo '<input type="submit" value=" Remove... "></form></td></tr>';
                 } else {
                     // no: add action "download&install"
-                    echo '<td><form action="'.$myurl.'" method="get">';
+                    echo '<td><form action="'.$env["myurl"].'" method="get">';
                     echo '<input type="hidden" name="action" value="appstore_appinstall">';
                     echo '<input type="hidden" name="name" value="'.$app['name'].'">';
                     echo '<input type="hidden" name="file" value="'.$app['file'].'">';
@@ -333,17 +332,17 @@
             echo "<p>error: name or file app is missing</p>";
         } else {
             echo "<p>Downloading App <b>".$file."</b> ... ";
-            $appfile=$apppath."/".$file;
+            $appfile=$env["apppath"]."/".$file;
             $fp = fopen($appfile, "wb");
             if (!$fp) {
                 echo "<p>error: fileopen failed for '".$appfile."'</p>";
             } else {
                 $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $appstore_url."?action=download&appfile=".$file);
+                curl_setopt($ch, CURLOPT_URL, $env["appstore_url"]."?action=download&appfile=".$file);
                 curl_setopt($ch, CURLOPT_HEADER, false);
                 curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
                 curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY); 
-                curl_setopt($ch, CURLOPT_USERPWD, $appstore_user.':'.$appstore_pass); 
+                curl_setopt($ch, CURLOPT_USERPWD, $env["appstore_user"].':'.$env["appstore_pass"]); 
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
                 $httpBody=curl_exec($ch);
                 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -380,7 +379,7 @@
         echo "<p>When removing this App, all configured devices are removed, too.</p>";
         echo "<p>Do you really want to remove the App '".$name_long."'?</p>";
         
-        echo '<td><form action="'.$myurl.'" method="get">';
+        echo '<td><form action="'.$env["myurl"].'" method="get">';
         echo '<input type="hidden" name="action" value="appstore_appremove_ok">';
         echo '<input type="hidden" name="name" value="'.$name.'">';
         echo '<input type="hidden" name="name_long" value="'.$name_long.'">';
@@ -418,7 +417,7 @@
                 echo '<td>'.$row['version'].'</td>';
                 
                 // Make new Device
-                echo '<td><form action="'.$myurl.'" method="get">';
+                echo '<td><form action="'.$env["myurl"].'" method="get">';
                 echo '<input type="hidden" name="action" value="makenewdevice_ok">';
                 echo '<input type="hidden" name="name" value="'.$row['name'].'">';
                 echo '<input type="hidden" name="name_long" value="'.$row['name_long'].'">';
@@ -429,7 +428,7 @@
             }  while ($row = $query->fetch() );
             echo "</table>\n";
         }
-        echo '<p>Device not found? Check the <a href="'.$myurl.'?action=appstore">GDCBox AppStore</a></p>';
+        echo '<p>Device not found? Check the <a href="'.$env["myurl"].'?action=appstore">GDCBox AppStore</a></p>';
 
     } else if ($action=='makenewdevice_ok') {
 
@@ -441,7 +440,7 @@
         echo '<p>Create a new Device of type <b>'.$name_long.'</b> ...</p>';
 
         // get appfile
-        require_once($apppath."/".$appfile);
+        require_once($env["apppath"]."/".$appfile);
         // classname ist filename ohne endung!
         $classname=substr($appfile,0,strpos($appfile,"."));
         // jetzt object erstellen...
@@ -451,7 +450,7 @@
         $id=$device->createNewDeviceInDB();
         echo "done</p>";
         
-        echo '<p>...done. Device can be <a href="'.$myurl.
+        echo '<p>...done. Device can be <a href="'.$env["myurl"].
              '?action=configuredevice&device_id='.$id.'">configured</a> now.</p>';
              
         unset($device);
@@ -467,13 +466,13 @@
         $device->loadDeviceFromDB($device_id);
         
         // remove device button
-        echo '<p><form action="'.$myurl.'" method="get">';
+        echo '<p><form action="'.$env["myurl"].'" method="get">';
         echo '<input type="hidden" name="action" value="removedevice">';
         echo '<input type="hidden" name="device_id" value="'.$device->device_values['id'].'">';
         echo '<input type="submit" value=" Remove Device "></form></p>';
         
         // show device params
-        echo '<form action="'.$myurl.'" method="get">';
+        echo '<form action="'.$env["myurl"].'" method="get">';
         echo '<input type="hidden" name="action" value="configuredevice_ok">';
         echo '<input type="hidden" name="device_id" value="'.$device_id.'">';
         echo '<table border="1">';
@@ -580,7 +579,7 @@
         echo '<h3>About GDCBox</h3>';
         echo '<p>The GDCBox ... </p>';
         echo '<p>Questions? Please check the <a href=".$baseurl."/gdcbox/faq.html>GDCBox FAQ</a></p>';
-        echo '<p>GDCBox Version: '.$gdcbox_version.'</p>';
+        echo '<p>GDCBox Version: '.$version.'</p>';
         echo '<p">The GDCBox is a Product of Ondics GmbH</p>';
 
     } else if ($action=='test-dbdump') {
@@ -612,16 +611,16 @@
     
     } else if ($action=='test-cronjoblogfile') {
         echo '<h3>Cronjob-Logfile</h3>';
-        echo "<p>Last 20 Lines of ".$cronjob_logfile."</p>\n";
+        echo "<p>Last 20 Lines of ".$env["cronjob_logfile"]."</p>\n";
         echo '<span style="font-size:smaller"><pre><code>';
-        echo htmlentities(shell_exec("tail -n 20 ". $cronjob_logfile));
+        echo htmlentities(shell_exec("tail -n 20 ". $env["cronjob_logfile"]));
         echo "</code></pre></span>";
     }
 
     //$_SESSION['lastaction']=$action;  // speichern, um bei reloads dopplung zu verhindern
     
     if ( $action != 'main' )
-        echo '<p><a href="'.$myurl.'?action=main">Back</a></p>';
+        echo '<p><a href="'.$env["myurl"].'?action=main">Back</a></p>';
     
 
     // db-connectivity schlieﬂen
@@ -631,7 +630,7 @@
     echo '<tr><td colspan="3"><hr></td></tr>';
     echo '<tr><td align="left">'.date("H:i").'</td>';
     echo '<td align="center">'.($testmode?'Test':'').'</td>';
-    echo '<td align="right"><a href="'.$myurl.'?action=gdcbox-info">About GDCBox</a></td></tr>';
+    echo '<td align="right"><a href="'.$env["myurl"].'?action=gdcbox-info">About GDCBox</a></td></tr>';
     echo (($testmode && $testmsg)?'<tr><td colspan="3" align="left">'.$testmsg.'</td></tr>':'');    
     echo '</table>';
 ?>
