@@ -5,37 +5,8 @@
     //  (C) Ondics,2012
     */
 
-    $gdcbox_version="0.1";
-    $testmode=FALSE; // einblenden von "Test" in Fuﬂzeile und "logout" bei Info.
-    $testmsg="";    // wird eingeblendet im footer
+    require_once("platforms.inc");
 
-    // basepath and baseurl depend on machine (default is gdcbox);
-    $basepath="/www-wifunbox";  
-    $baseurl="";
-    $machine="srv1";
-    if ($machine=="srv1") {
-        // ...for use on srv1.ondics.de
-        $basepath="/home/clauss/git-repos/ondics-gdc-gdcbox/www";
-        $baseurl="/gdcbox";
-    }
-    // now the real paths
-    $database=$basepath.'/gdcbox/gdcbox-db.sqlite';
-    $classinc=$basepath.'/gdcbox/classes.inc';
-    $myurl=$baseurl."/cgi-bin/gdcbox.php";
-    
-    // appstore access
-    $appstore_url="http://srv1.ondics.de/gdcbox/appstore/appstore.php";
-    $appstore_user="appstore";
-    $appstore_pass="appstore";
-    $apppath=$basepath."/gdcbox/apps";
-        
-    // cronjob-script
-    $cronjob_script='gdcbox_cronjob.php';
-    $cronjob_script_path=$basepath.'/gdcbox/'.$cronjob_script;
-    
-    // gdc access
-    $gdc_baseurl="http://gdc.ondics.de/gdc-da.php";
-    
     function output($output, $stop=false) {
         echo date("Y-m-d H:i:s")." PID=".getmypid()." ".$output.". ";
         if ($stop) die("aborting!\n");
@@ -43,10 +14,10 @@
     }
     
     // datenbankzugriff herstellen
-    if (! ($pdo=new PDO('sqlite:'.$database)) )
+    if (! ($pdo=new PDO('sqlite:'.$env["database"])) )
         output("error: database access",true);
 
-    require_once($classinc);
+    require_once($env["classinc"]);
     
     // get device_id from command line (as specifioed in crontab)
     if (empty($argc) || $argc<2)
@@ -72,7 +43,7 @@
         
     // load dynamic device app code
     $appfile=$row[0];
-    require_once($apppath."/".$row[0]);
+    require_once($env["apppath"]."/".$row[0]);
  
     // instantiate new device object
     $classname=substr($appfile,0,strpos($appfile,"."));
@@ -99,7 +70,7 @@
     }
     
     // prepare GDC-Url 
-    $gdc_url=$gdc_baseurl."?sid=".$device->device_values['gdc_sid'];
+    $gdc_url=$env["gdc_baseurl"]."?sid=".$device->device_values['gdc_sid'];
     // add values to gdc url 
     for ($i=0; $i<$device->device_config_values['NumValues']; $i++) {
         if ($device->values[$i]!="")
