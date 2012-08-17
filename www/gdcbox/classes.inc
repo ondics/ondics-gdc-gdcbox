@@ -14,7 +14,6 @@ class Device {
     public $error = "";             // status of last operation
     public $values = array();       // last values read from device
 
-
     function isLoaded() {
         return $this->loaded;
     }
@@ -90,16 +89,21 @@ class Device {
             echo "<p>error: Device::removeGenericDeviceFromDB!";
             return false;
         }
-        // second: remove all devices
+        // second: remove all devices_values from these devices
+        echo "<p>removing values for all devices to be removed</p>";
+        $pdo->exec("DELETE FROM device_values WHERE device_id IN ".
+                   "( SELECT id FROM devices WHERE generic_device_name='".$generic_device_name."')");
+        // third: remove all devices
         echo "<p>removing configs for all devices to be removed</p>";
         $pdo->exec("DELETE FROM device_configs WHERE device_id IN ".
-                   "( SELECT id FROM devices d WHERE generic_device_name='".$generic_device_name."')");
-        // third: remove generic_device
+                   "( SELECT id FROM devices WHERE generic_device_name='".$generic_device_name."')");
+        // fourth: remove generic_device
         echo "<p>removing devices</p>";
         $pdo->exec("DELETE FROM devices WHERE generic_device_name='".$generic_device_name."'");
-        // fourth: remove generic_device
+        // fifth: remove generic_device
         echo "<p>removing generic_device</p>";
         $pdo->exec("DELETE FROM generic_devices WHERE name='".$generic_device_name."'");
+        
         return true;
     }
 
@@ -224,7 +228,7 @@ class Device {
         $timestamp=$row['timestamp'];
   }
 
-
+   
 
 }
 
