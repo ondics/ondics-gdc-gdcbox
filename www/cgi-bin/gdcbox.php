@@ -496,6 +496,7 @@
         foreach ( $device->device_config_values as $key => $value) {
             switch ($key) {
                 case 'NumValues': break;
+                case 'SysInfo': break;
                 default: 
                     echo '<tr><td>'.$key.'</td><td><input type="text" size="50" name="'.
                          $key.'" value="'.$value.'"></td></tr>';
@@ -504,6 +505,16 @@
         }
         echo "</table>";
         echo '<p><input type="submit" value=" Save Changes "></form></p>';
+
+        if (isset($device->device_config_values['SysInfo'])
+             && $device->device_config_values['SysInfo']==true) {
+            echo '<p>This device helps you configuring by displaying <br>';
+            echo 'some Information about the system (opens in new window):<br>';
+            echo '<form>';
+            echo '<input type="button" value=" System Information ... " onclick="window.open('.
+                 '\''.$env["myurl"].'?action=show_system_info&device_id='.$device_id.'\');">';
+            echo '</form></p>';
+        }
 
 
     } else if ($action=='configuredevice_ok') {
@@ -533,6 +544,34 @@
                 echo "<p>Restarting done.</p>";
             }
         }
+
+    } else if ($action=='show_system_info') {
+
+        echo '<h2>System Information</h2>';
+        $device_id=getValueFromURLSave('device_id');
+        
+        // load device-app
+        $query = $pdo->prepare("SELECT gd.appfile,d.active,d.gdc_send ".
+                               "FROM devices d, generic_devices gd ".
+                               "WHERE d.generic_device_name=gd.name ".
+                               "AND d.id=".$device_id);
+        $query->execute();
+        $row = $query->fetch();
+        // load dynamic device app code
+        $appfile=$row[0];
+        require_once($env["apppath"]."/".$row[0]);
+ 
+        // instantiate new device object
+        $classname=substr($appfile,0,strpos($appfile,"."));
+        $device=new $classname();
+        $device->loadDeviceFromDB($device_id);
+        if ($device->isLoaded()) {
+            echo $device->getSystemInfoInHTML();
+        } else {
+            echo "<p>No System Information found.</p>";
+        }
+        echo '<form><input type="button" VALUE=" Close " onClick="top.close();"></form>';
+
 
     } else if ($action=='removedevice') {
 
