@@ -1,5 +1,8 @@
 <?php
-//require_once('classes.inc');
+
+// todo:nutzer der avnetio-klasse von
+// http://www.saschakimmel.de/assets/AvrNetIo.phps
+// beschrieben in http://www.saschakimmel.de/2010/02/avr-net-io-mit-php-ansteuern
 
 class avrnetio extends Device {
 
