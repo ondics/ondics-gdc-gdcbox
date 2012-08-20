@@ -40,10 +40,6 @@
                 'ver'=>'0.0.1',
                 'platforms'=>'ANY',
                 'file'=>'testdevice.inc' ),
-        array(  'name'=>'Testdevice Mini',
-                'ver'=>'1.0.0',
-                'platforms'=>'ANY',
-                'file'=>'testdevice_mini.inc' ),
     );
 
     $action=isset($_GET['action'])?htmlentities($_GET['action'],ENT_QUOTES):'';
