@@ -13,17 +13,17 @@ class testdevice extends Device {
         $this->generic_device_specs['appfile']='testdevice.inc';
         $this->device_defaults['description']='Testdevice ohne Network-Access. Liefert als Messwert immer 1';
         $this->device_defaults['location']='auf der GDCBox';
-        $this->device_config_defaults['IP-Address']='localhost';
-        $this->device_config_defaults['NumValues']=1;
-        $this->device_config_defaults['0_Description']='Returns always 123';
-        $this->device_config_defaults['0_Formula']='$value';
+        $this->device_config_defaults['IP-Address']=array('value'=>'localhost','attribs'=>'');
+        $this->device_config_defaults['NumValues']=array('value'=>1,'attribs'=>'visible:no');
+        $this->device_config_defaults['0_Description']=array('value'=>'Returns always 123','attribs'=>'');
+        $this->device_config_defaults['0_Formula']=array('value'=>'$value','attribs'=>'');
         parent::checkDefaultValues();        
     }
 
     function getValuesFromDevice() {
         $this->error="";
         if (!parent::isLoaded()) {$this->error.="error: device not loaded";return; }
-        $value=1;
+        $value=123;
         $this->error .= parent::getValuesFromDevicePostprocessingValue(0,$value);
         return $this->error; 
     }

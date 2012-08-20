@@ -11,17 +11,17 @@ class lufft_ws600 extends Device {
         $this->generic_device_specs['description']='Super Gerät, sehr weiß.';
         $this->generic_device_specs['appfile']='lufft_ws600.inc';
         $this->device_defaults['description']='Lufft WS 600, Montiert auf...';
-        $this->device_config_defaults['Port']=1470;
-        $this->device_config_defaults['DeviceID']='28673';
-        $this->device_config_defaults['NumValues']=2;
-        $this->device_config_defaults['0_Channel']='00100';
-        $this->device_config_defaults['0_Description']='Temperature';
-        $this->device_config_defaults['0_Unit']='Grad Celsius';
-        $this->device_config_defaults['0_Formula']='round((70-(-30))/65520*$value+(-30),4,PHP_ROUND_HALF_UP)';  // see umb-manual; page 34
-        $this->device_config_defaults['1_Channel']='00200';
-        $this->device_config_defaults['1_Description']='Rel. Humidity';
-        $this->device_config_defaults['1_Unit']='%';
-        $this->device_config_defaults['1_Formula']='round((100-(0))/65520*$value+(+0),4,PHP_ROUND_HALF_UP)';
+        $this->device_config_defaults['Port']=array('value'=>'1470','attribs'=>'');
+        $this->device_config_defaults['DeviceID']=array('value'=>'28673','attribs'=>'');
+        $this->device_config_defaults['NumValues']=array('value'=>'2','attribs'=>'');
+        $this->device_config_defaults['0_Channel']=array('value'=>'00100','attribs'=>'');
+        $this->device_config_defaults['0_Description']=array('value'=>'Temperature','attribs'=>'');
+        $this->device_config_defaults['0_Unit']=array('value'=>'Grad Celsius','attribs'=>'');
+        $this->device_config_defaults['0_Formula']=array('value'=>'round((70-(-30))/65520*$value+(-30),4,PHP_ROUND_HALF_UP)','attribs'=>'');  // see umb-manual; page 34
+        $this->device_config_defaults['1_Channel']=array('value'=>'00200','attribs'=>'');
+        $this->device_config_defaults['1_Description']=array('value'=>'Rel. Humidity','attribs'=>'');
+        $this->device_config_defaults['1_Unit']=array('value'=>'%','attribs'=>'');
+        $this->device_config_defaults['1_Formula']=array('value'=>'round((100-(0))/65520*$value+(+0),4,PHP_ROUND_HALF_UP)','attribs'=>'');
         parent::checkDefaultValues();
     }
     
@@ -31,10 +31,10 @@ class lufft_ws600 extends Device {
         
         // trace socket operations exactely!
         //error_reporting(E_ALL);
-        $address = $this->device_config_values['IP-Address'];
-        $port = $this->device_config_values['Port'];
+        $address = $this->device_config_values['IP-Address']['value'];
+        $port = $this->device_config_values['Port']['value'];
 
-        for ($i=0; $i<$this->device_config_values['NumValues']; $i++) {
+        for ($i=0; $i<$this->device_config_values['NumValues']['value']; $i++) {
             // Create a TCP/IP socket.
             $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
             if ($socket === false) { return $this->error.="error: socket_create() failed."; }
@@ -47,8 +47,8 @@ class lufft_ws600 extends Device {
             //echo "requesting [".$this->device_config_values[$i.'_Description']."]\n";
             // make an umb ascii request with pattern "& <ID> M <CHANNEL>CR"
             // see umb-manual, page 34
-            $request= '& '.$this->device_config_values['DeviceID'].
-                      " M ".$this->device_config_values[$i.'_Channel']." \n";
+            $request= '& '.$this->device_config_values['DeviceID']['value'].
+                      " M ".$this->device_config_values[$i.'_Channel']['value']." \n";
                      
             //echo "Sending [".substr($request,0,-1)."] to server.\n";
             socket_write($socket, $request, strlen($request));

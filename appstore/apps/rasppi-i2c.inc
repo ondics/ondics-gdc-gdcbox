@@ -12,15 +12,15 @@ class rasppi-i2c extends Device {
         $this->generic_device_specs['description']='Hot. Very hot!';
         $this->generic_device_specs['appfile']='rasppi-i2c.inc';
         $this->device_defaults['description']='I2C-Bus connected to Raspberry PI.';
-        $this->device_config_defaults['Port']=99999;
-        $this->device_config_defaults['L2P-Driver-Path']='/home/clauss/git-repos/ondics-lufft-opus20/';
-        $this->device_config_defaults['NumValues']=2;
-        $this->device_config_defaults['0_Channel']='A0 00';  // in reverse hex!
-        $this->device_config_defaults['0_Description']='CHANNEL 1';
-        $this->device_config_defaults['0_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
-        $this->device_config_defaults['1_Channel']='2C 01';
-        $this->device_config_defaults['1_Description']='CHANNEL 2';
-        $this->device_config_defaults['1_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
+        $this->device_config_defaults['Port']=array('value'=>'99999','attribs'=>'');
+        $this->device_config_defaults['L2P-Driver-Path']='/home/clauss/git-repos/ondics-lufft-opus20/','attribs'=>'');
+        $this->device_config_defaults['NumValues']=array('value'=>'2','attribs'=>'');
+        $this->device_config_defaults['0_Channel']=array('value'=>'A0 00','attribs'=>'');  // in reverse hex!
+        $this->device_config_defaults['0_Description']=array('value'=>'CHANNEL 1','attribs'=>'');
+        $this->device_config_defaults['0_Formula']=array('value'=>'round($value,3,PHP_ROUND_HALF_UP)','attribs'=>'');
+        $this->device_config_defaults['1_Channel']=array('value'=>'2C 01','attribs'=>'');
+        $this->device_config_defaults['1_Description']=array('value'=>'CHANNEL 2','attribs'=>'');
+        $this->device_config_defaults['1_Formula']=array('value'=>'round($value,3,PHP_ROUND_HALF_UP)','attribs'=>'');
         parent::checkDefaultValues();
     }        
     
@@ -30,10 +30,10 @@ class rasppi-i2c extends Device {
         
         // trace socket operations exactely!
         //error_reporting(E_ALL);
-        $address = $this->device_config_values['IP-Address'];
-        $port = $this->device_config_values['Port'];
+        $address = $this->device_config_values['IP-Address']['value'];
+        $port = $this->device_config_values['Port']['value'];
 
-        for ($i=0; $i<$this->device_config_values['NumValues']; $i++) {
+        for ($i=0; $i<$this->device_config_values['NumValues']['value']; $i++) {
             // Create a TCP/IP socket.
             $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
             if ($socket === false) { return $this->error.="error: socket_create() failed."; }
@@ -45,9 +45,9 @@ class rasppi-i2c extends Device {
 
             // Nettodaten: (0x23,0x10,0xA0,0x00); // 0x00A0 .. durchschn. Temperatur
             //$l2p_frame=pack("C*",0x01,0x10,0x00,0x00,0x00,0x00,0x04,0x02,0x23,0x10,0xa0,0x00,0x03,0xf1,0xc4,0x04);
-            $nettodaten="23 10 ".$this->device_config_values[$i.'_Channel'];
+            $nettodaten="23 10 ".$this->device_config_values[$i.'_Channel']['value'];
             $l2p_frame=shell_exec('echo "'.$nettodaten.'" | '.
-                                  $this->device_config_values['L2P-Driver-Path'].'/l2p-frame -x ');
+                                  $this->device_config_values['L2P-Driver-Path']['value'].'/l2p-frame -x ');
                                  
             //echo "frame-laenge=".strlen($l2p_frame)."\n";
             $sent=socket_write($socket, $l2p_frame, strlen($l2p_frame));
@@ -62,7 +62,7 @@ class rasppi-i2c extends Device {
             foreach ($unpacked as $val) $hexstring.=sprintf("%02X ",$val);
             //echo "hexstring=[$hexstring]\n";
             $value=shell_exec('echo "'.$hexstring.'" | '.
-                              $this->device_config_values['L2P-Driver-Path'].'/l2p-result -a ');
+                              $this->device_config_values['L2P-Driver-Path']['value'].'/l2p-result -a ');
             //echo "value=[$value]\n";
 
             // now do some postprocessing

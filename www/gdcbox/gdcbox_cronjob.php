@@ -52,7 +52,7 @@
     if (!$device->isLoaded())
         output("error: device [".$classname."] not found in db",true);
     
-    $ipaddress=$device->device_config_values['IP-Address'];
+    $ipaddress=$device->device_config_values['IP-Address']['value'];
     // do some logging...
     output("Device ".$device->device_values['name']." (id=".$device_id.", ipaddr=".$ipaddress.")");
     
@@ -62,6 +62,10 @@
 
     // now request values from device
     $error=$device->getValuesFromDevice();
+    
+    $values_to_print=implode("|",$device->values);
+    output("values=$values_to_print");
+
     if ($error!="") {
         output("error: ".$error,true);
     } else {
@@ -72,7 +76,7 @@
     // prepare GDC-Url 
     $gdc_url=$env["gdc_baseurl"]."?sid=".$device->device_values['gdc_sid'];
     // add values to gdc url 
-    for ($i=0; $i<$device->device_config_values['NumValues']; $i++) {
+    for ($i=0; $i<$device->device_config_values['NumValues']['value']; $i++) {
         if ($device->values[$i]!="")
             $gdc_url.="&value".$i."=".$device->values[$i];
     }

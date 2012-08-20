@@ -1,5 +1,7 @@
 <?php
 
+require_once("/home/clauss/git-repos/ondics-gdc-gdcbox/www/gdcbox/platforms.inc");
+
 class Device {
     
     // default values, set in subclasses
@@ -35,27 +37,30 @@ class Device {
             'gdc_sid'=>'===***unset***===',
             'generic_device_name'=>'',
             'active'=>'no',
-            'gdc_send'=>'no'
+            'gdc_send'=>'no',
         );
         $this->device_config_defaults = array(
-            'IP-Address'=>'',
-//            'Port'=>'',
-            'NumValues'=>'1',
-            '0_Description'=>'',
-            '0_Formula'=>'$value'
+            'IP-Address'=>array('value'=>'','attribs'=>''),
+            'SysInfo'=>array('value'=>'no','attribs'=>'visible:no'),
+            'NumValues'=>array('value'=>'1','attribs'=>'visible:no'),
+            '0_Description'=>array('value'=>'','attribs'=>''),
+            '0_Formula'=>array('value'=>'$value','attribs'=>'')
         );
     }
     
     function checkDefaultValues() {
-        // check generice_device values
+        // overwrite generice_device values
         if (!isset($this->generic_device_specs['version'])) die("init error: version missing");
         if (!isset($this->generic_device_specs['name']))    die("init error: name unset");
         if (!isset($this->generic_device_specs['appfile'])) die("init error: appfile unset");
 
-        // check device_default values
+        // overwrite device_default values
         $this->device_defaults['name']=$this->generic_device_specs['name'];
         $this->device_defaults['generic_device_name']=$this->generic_device_specs['name'];
         $this->device_defaults['gdc_sid']="***===unset===***";
+        
+        // check device default values
+        if ($this->device_config_defaults['NumValues']['value']<1) die("init error: NumValues<1");
     }    
     
     function createNewGenericDeviceInDB() {
@@ -76,15 +81,15 @@ class Device {
     }
     
     function removeGenericDeviceFromDB($generic_device_name) {
-        global $apppath,$pdo;
+        global $apppath,$pdo, $env;
         
         // first: delete local files (read filename from db)
         $query = $pdo->prepare("SELECT appfile FROM generic_devices ".
                                 "WHERE name='".$generic_device_name."'");
         $query->execute();
         if ($row = $query->fetch()) {
-            echo "<p>removing file ".$apppath."/".$row['appfile']."</p>";
-            unlink($apppath."/".$row['appfile']);
+            echo "<p>removing file ".$env["apppath"]."/".$row['appfile']."</p>";
+            unlink($env["apppath"]."/".$row['appfile']);
         } else {
             echo "<p>error: Device::removeGenericDeviceFromDB!";
             return false;
@@ -122,16 +127,18 @@ class Device {
         $pdo->exec($sql);
         $device_id=$pdo->lastInsertId('id');
         // then create corresonding device_configs        
-        foreach ( $this->device_config_defaults as $key => $value) {
-            $sql="INSERT INTO device_configs (device_id,key,value) ".
-                 "VALUES (".$device_id.",'".$key."','".$value."')";
+        foreach ( $this->device_config_defaults as $key => $valueattribs) {
+            $value=$valueattribs['value'];
+            $attribs=$valueattribs['attribs'];
+            $sql="INSERT INTO device_configs (device_id,key,value,attribs) ".
+                 "VALUES (".$device_id.",'".$key."','".$value."','".$attribs."')";
             echo "<p>sql=".$sql."</p>";
             $pdo->exec($sql);
         }
-        // then create one entry for all values of this device (format is
+        // then create one entry for all measured values of this device (format is
         // empty value "-" separated by "|")
         $valuesstring="";
-        for($i=0; $i<$this->device_config_defaults['NumValues'];$i++)
+        for($i=0; $i<$this->device_config_defaults['NumValues']['value'];$i++)
             $valuesstring.=($valuesstring==""?"":"|")."-";
         $sql="INSERT INTO device_values (device_id,timestamp,valuesstring) ".
              "VALUES (".$device_id.",'".date("Y-m-d H:i:s")."','".$valuesstring."')";
@@ -152,10 +159,13 @@ class Device {
         foreach($row as $field => $value)
             $this->device_values[$field]=$value;
         // .. then get device-config-values...
-        $query = $pdo->prepare("SELECT * FROM device_configs WHERE device_id=".$device_id);
+        $query = $pdo->prepare("SELECT * FROM device_configs WHERE device_id=".$device_id.
+                               " ORDER BY key ASC");
         $query->execute();
-        while( $row = $query->fetch(PDO::FETCH_ASSOC) )
-            $this->device_config_values[$row['key']]=$row['value'];
+        while( $row = $query->fetch(PDO::FETCH_ASSOC) ) {
+            $this->device_config_values[$row['key']]['value']=$row['value'];
+            $this->device_config_values[$row['key']]['attribs']=$row['attribs'];
+        }
         $this->loaded=true;
     }
 
@@ -171,12 +181,13 @@ class Device {
                 default: $sqlfields.=($sqlfields==""?"":", ").$key."='".$value."'";
             }
         }
+        echo "<p>".$sqlfields."</p>";
         $pdo->exec("UPDATE devices SET ".$sqlfields." WHERE id=".$this->device_values['id']);
-        foreach ($this->device_config_values as $key => $value) 
+        foreach ($this->device_config_values as $key => $valueattribs)  {
             if ($key!='NumValues')
-                $pdo->exec("UPDATE device_configs SET value='".$value."' ".
+                $pdo->exec("UPDATE device_configs SET value='".$valueattribs['value']."' ".
                      "WHERE device_id=".$this->device_values['id']." AND key='".$key."'");
-        
+        }
     }
 
     function removeDeviceFromDB($id) {
@@ -197,7 +208,7 @@ class Device {
     // is calculated with "n_Formula"-field
     function getValuesFromDevicePostprocessingValue($numValue,$value) {
         $error="";
-        $phpcode='$value=('.$this->device_config_values[$numValue."_Formula"].');';
+        $phpcode='$value=('.$this->device_config_values[$numValue."_Formula"]['value'].');';
         $eval_ok=eval($phpcode);
         if ($eval_ok===FALSE)
             $error=" eval failed for value [$$numValue].";

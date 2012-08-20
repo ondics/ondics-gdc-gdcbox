@@ -15,20 +15,21 @@ class avrnetio extends Device {
         $this->generic_device_specs['url']='http://srv1.ondics.de/appstore/devicehelp.html';
         $this->generic_device_specs['appfile']='avrnetio.inc';
         $this->device_defaults['description']='AVR-Net-IO mit Beschaltung für...';
-        $this->device_config_defaults['Port']=50290;
-        $this->device_config_defaults['NumValues']=4;
-        $this->device_config_defaults['0_Channel']='1';
-        $this->device_config_defaults['0_Description']='ADC1';
-        $this->device_config_defaults['0_Formula']='$value';
-        $this->device_config_defaults['1_Channel']='2';
-        $this->device_config_defaults['1_Description']='ADC2';
-        $this->device_config_defaults['1_Formula']='$value';
-        $this->device_config_defaults['2_Channel']='3';
-        $this->device_config_defaults['2_Description']='ADC3';
-        $this->device_config_defaults['2_Formula']='$value';
-        $this->device_config_defaults['3_Channel']='4';
-        $this->device_config_defaults['3_Description']='ADC4';
-        $this->device_config_defaults['3_Formula']='$value';
+        $this->device_config_defaults['IP-Address'] =array('value'=>'localhost','attribs'=>'');        
+        $this->device_config_defaults['Port']       =array('value'=>'50290','attribs'=>'');
+        $this->device_config_defaults['NumValues']  =array('value'=>'4','attribs'=>'visible:no');
+        $this->device_config_defaults['0_Channel']  =array('value'=>'1','attribs'=>'');
+        $this->device_config_defaults['0_Description']=array('value'=>'ADC1','attribs'=>'');
+        $this->device_config_defaults['0_Formula']  =array('value'=>'$value','attribs'=>'');
+        $this->device_config_defaults['1_Channel']  =array('value'=>'2','attribs'=>'');
+        $this->device_config_defaults['1_Description']=array('value'=>'ADC2','attribs'=>'');
+        $this->device_config_defaults['1_Formula']  =array('value'=>'$value','attribs'=>'');
+        $this->device_config_defaults['2_Channel']  =array('value'=>'3','attribs'=>'');
+        $this->device_config_defaults['2_Description']=array('value'=>'ADC3','attribs'=>'');
+        $this->device_config_defaults['2_Formula']  =array('value'=>'$value','attribs'=>'');
+        $this->device_config_defaults['3_Channel']  =array('value'=>'4','attribs'=>'');
+        $this->device_config_defaults['3_Description']=array('value'=>'ADC4','attribs'=>'');
+        $this->device_config_defaults['3_Formula']  =array('value'=>'$value','attribs'=>'');
         parent::checkDefaultValues();
     }
     
@@ -38,10 +39,10 @@ class avrnetio extends Device {
         
         // trace socket operations exactely!
         //error_reporting(E_ALL);
-        $address = $this->device_config_values['IP-Address'];
-        $port = $this->device_config_values['Port'];
+        $address = $this->device_config_values['IP-Address']['value'];
+        $port = $this->device_config_values['Port']['value'];
 
-        for ($i=0; $i<$this->device_config_values['NumValues']; $i++) {
+        for ($i=0; $i<$this->device_config_values['NumValues']['value']; $i++) {
             // Create a TCP/IP socket.
             $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
             if ($socket === false) { return $this->error.="error: socket_create() failed."; }
@@ -54,7 +55,7 @@ class avrnetio extends Device {
             //echo "requesting [".$this->device_config_values[$i.'_Description']."]\n";
             // make an umb ascii request with pattern "& <ID> M <CHANNEL>CR"
             // see AVR Net IO manual, page 34
-            $request= 'GETADC '.$this->device_config_values[$i.'_Channel']."\r\n";
+            $request= 'GETADC '.$this->device_config_values[$i.'_Channel']['value']."\r\n";
                      
             //echo "Sending [".substr($request,0,-1)."] to server.\n";
             socket_write($socket, $request, strlen($request));

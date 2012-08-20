@@ -11,29 +11,29 @@ class hostping extends Device {
         $this->generic_device_specs['description']='Prüfung, ob Host mittels Ping erreichbar ist.';
         $this->generic_device_specs['appfile']='hostping.inc';
         $this->device_defaults['description']='Prüfung, ob Host mittels Ping erreichbar ist.';
-        $this->device_config_defaults['IP-Address']='';
-        $this->device_config_defaults['NumberRetries']='5';
-        $this->device_config_defaults['NumValues']=4;
-        $this->device_config_defaults['0_Description']='RTT min in ms';
-        $this->device_config_defaults['0_Formula']='$value';
-        $this->device_config_defaults['1_Description']='RTT avg (average) in ms';
-        $this->device_config_defaults['1_Formula']='$value';
-        $this->device_config_defaults['2_Description']='RTT max in ms';
-        $this->device_config_defaults['2_Formula']='$value';
-        $this->device_config_defaults['3_Description']='RTT mdev (moving standard deviation) in ms';
-        $this->device_config_defaults['3_Formula']='$value';
+        $this->device_config_defaults['IP-Address']   =array('value'=>'localhost','attribs'=>'');
+        $this->device_config_defaults['NumberRetries']=array('value'=>'5','attribs'=>'');
+        $this->device_config_defaults['NumValues']    =array('value'=>'4','attribs'=>'visible:no');
+        $this->device_config_defaults['0_Description']=array('value'=>'RTT min in ms','attribs'=>'');
+        $this->device_config_defaults['0_Formula']    =array('value'=>'$value','attribs'=>'');
+        $this->device_config_defaults['1_Description']=array('value'=>'RTT avg (average) in ms','attribs'=>'');
+        $this->device_config_defaults['1_Formula']    =array('value'=>'$value','attribs'=>'');
+        $this->device_config_defaults['2_Description']=array('value'=>'RTT max in ms','attribs'=>'');
+        $this->device_config_defaults['2_Formula']    =array('value'=>'$value','attribs'=>'');
+        $this->device_config_defaults['3_Description']=array('value'=>'RTT mdev (moving standard deviation) in ms','attribs'=>'');
+        $this->device_config_defaults['3_Formula']    =array('value'=>'$value','attribs'=>'');
         parent::checkDefaultValues();        
     }
 
     function getValuesFromDevice() {
         $this->error="";
         if (!parent::isLoaded()) {$this->error.="error: device not loaded";return; }
-        $command = "ping -q -c ".$this->device_config_values['NumberRetries']." ".
-                    $this->device_config_values['IP-Address'];
+        $command = "ping -q -c ".$this->device_config_values['NumberRetries']['value']." ".
+                    $this->device_config_values['IP-Address']['value'];
         $lastline= exec($command);
         $ping_all_times=explode(" ",$lastline);
         $ping_times=explode("/",$ping_all_times[3]);
-        for ($i=0; $i<$this->device_config_values['NumValues']; $i++)
+        for ($i=0; $i<$this->device_config_values['NumValues']['value']; $i++)
             $this->error .= parent::getValuesFromDevicePostprocessingValue($i,$ping_times[$i]);
         return $this->error; 
     }

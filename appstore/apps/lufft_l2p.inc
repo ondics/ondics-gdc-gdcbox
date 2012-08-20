@@ -12,30 +12,30 @@ class lufft_l2p extends Device {
         $this->generic_device_specs['description']='Hot. Very hot!';
         $this->generic_device_specs['appfile']='lufft_l2p.inc';
         $this->device_defaults['description']='OPUS20.THIP oder OPUS20...';
-        $this->device_config_defaults['Port']=52015;
-        $this->device_config_defaults['L2P-Driver-Path']='/home/clauss/git-repos/ondics-lufft-opus20/';
-        $this->device_config_defaults['NumValues']=7;
-        $this->device_config_defaults['0_Channel']='A0 00';  // in reverse hex!
-        $this->device_config_defaults['0_Description']='Temperature avg. in °C';
-        $this->device_config_defaults['0_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
-        $this->device_config_defaults['1_Channel']='2C 01';
-        $this->device_config_defaults['1_Description']='abs. air pressure in hPa';
-        $this->device_config_defaults['1_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
-        $this->device_config_defaults['2_Channel']='C8 00';
-        $this->device_config_defaults['2_Description']='relative humidity in %';
-        $this->device_config_defaults['2_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
-        $this->device_config_defaults['3_Channel']='6E 00';
-        $this->device_config_defaults['3_Description']='dewpoint in %';
-        $this->device_config_defaults['3_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
-        $this->device_config_defaults['4_Channel']='24 27';
-        $this->device_config_defaults['4_Description']='battery voltage in V';
-        $this->device_config_defaults['4_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
-        $this->device_config_defaults['5_Channel']='31 01';
-        $this->device_config_defaults['5_Description']='rel. air pressure in hPa';
-        $this->device_config_defaults['5_Formula']='round($value,3,PHP_ROUND_HALF_UP)';
-        $this->device_config_defaults['6_Channel']='CD 00';
-        $this->device_config_defaults['6_Description']='absolute humidity in %';
-        $this->device_config_defaults['6_Formula']='round($value,3,PHP_ROUND_HALF_UP)';  
+        $this->device_config_defaults['Port']=array('value'=>'52015','attribs'=>'');
+        $this->device_config_defaults['L2P-Driver-Path']=array('value'=>'/home/clauss/git-repos/ondics-lufft-opus20/','attribs'=>'');
+        $this->device_config_defaults['NumValues']=array('value'=>'7','attribs'=>'visible:no');
+        $this->device_config_defaults['0_Channel']=array('value'=>'A0 00','attribs'=>'');  // in reverse hex!
+        $this->device_config_defaults['0_Description']=array('value'=>'Temperature avg. in °C','attribs'=>'');
+        $this->device_config_defaults['0_Formula']=array('value'=>'round($value,3,PHP_ROUND_HALF_UP)','attribs'=>'');
+        $this->device_config_defaults['1_Channel']=array('value'=>'2C 01','attribs'=>'');
+        $this->device_config_defaults['1_Description']=array('value'=>'abs. air pressure in hPa','attribs'=>'');
+        $this->device_config_defaults['1_Formula']=array('value'=>'round($value,3,PHP_ROUND_HALF_UP)','attribs'=>'');
+        $this->device_config_defaults['2_Channel']=array('value'=>'C8 00','attribs'=>'');
+        $this->device_config_defaults['2_Description']=array('value'=>'relative humidity in %','attribs'=>'');
+        $this->device_config_defaults['2_Formula']=array('value'=>'round($value,3,PHP_ROUND_HALF_UP)','attribs'=>'');
+        $this->device_config_defaults['3_Channel']=array('value'=>'6E 00','attribs'=>'');
+        $this->device_config_defaults['3_Description']=array('value'=>'dewpoint in %','attribs'=>'');
+        $this->device_config_defaults['3_Formula']=array('value'=>'round($value,3,PHP_ROUND_HALF_UP)','attribs'=>'');
+        $this->device_config_defaults['4_Channel']=array('value'=>'24 27','attribs'=>'');
+        $this->device_config_defaults['4_Description']=array('value'=>'battery voltage in V','attribs'=>'');
+        $this->device_config_defaults['4_Formula']=array('value'=>'round($value,3,PHP_ROUND_HALF_UP)','attribs'=>'');
+        $this->device_config_defaults['5_Channel']=array('value'=>'31 01','attribs'=>'');
+        $this->device_config_defaults['5_Description']=array('value'=>'rel. air pressure in hPa','attribs'=>'');
+        $this->device_config_defaults['5_Formula']=array('value'=>'round($value,3,PHP_ROUND_HALF_UP)','attribs'=>'');
+        $this->device_config_defaults['6_Channel']=array('value'=>'CD 00','attribs'=>'');
+        $this->device_config_defaults['6_Description']=array('value'=>'absolute humidity in %','attribs'=>'');
+        $this->device_config_defaults['6_Formula']=array('value'=>'round($value,3,PHP_ROUND_HALF_UP)','attribs'=>'');  
         parent::checkDefaultValues();
     }        
     
@@ -45,10 +45,10 @@ class lufft_l2p extends Device {
         
         // trace socket operations exactely!
         //error_reporting(E_ALL);
-        $address = $this->device_config_values['IP-Address'];
-        $port = $this->device_config_values['Port'];
+        $address = $this->device_config_values['IP-Address']['value'];
+        $port = $this->device_config_values['Port']['value'];
 
-        for ($i=0; $i<$this->device_config_values['NumValues']; $i++) {
+        for ($i=0; $i<$this->device_config_values['NumValues']['value']; $i++) {
             // Create a TCP/IP socket.
             $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
             if ($socket === false) { return $this->error.="error: socket_create() failed."; }
@@ -60,9 +60,9 @@ class lufft_l2p extends Device {
 
             // Nettodaten: (0x23,0x10,0xA0,0x00); // 0x00A0 .. durchschn. Temperatur
             //$l2p_frame=pack("C*",0x01,0x10,0x00,0x00,0x00,0x00,0x04,0x02,0x23,0x10,0xa0,0x00,0x03,0xf1,0xc4,0x04);
-            $nettodaten="23 10 ".$this->device_config_values[$i.'_Channel'];
+            $nettodaten="23 10 ".$this->device_config_values[$i.'_Channel']['value'];
             $l2p_frame=shell_exec('echo "'.$nettodaten.'" | '.
-                                  $this->device_config_values['L2P-Driver-Path'].'/l2p-frame -x ');
+                                  $this->device_config_values['L2P-Driver-Path']['value'].'/l2p-frame -x ');
                                  
             //echo "frame-laenge=".strlen($l2p_frame)."\n";
             $sent=socket_write($socket, $l2p_frame, strlen($l2p_frame));
@@ -77,7 +77,7 @@ class lufft_l2p extends Device {
             foreach ($unpacked as $val) $hexstring.=sprintf("%02X ",$val);
             //echo "hexstring=[$hexstring]\n";
             $value=shell_exec('echo "'.$hexstring.'" | '.
-                              $this->device_config_values['L2P-Driver-Path'].'/l2p-result -a ');
+                              $this->device_config_values['L2P-Driver-Path']['value'].'/l2p-result -a ');
             //echo "value=[$value]\n";
 
             // now do some postprocessing

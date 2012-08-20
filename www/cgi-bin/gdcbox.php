@@ -7,44 +7,13 @@
 
 
     require_once("/home/clauss/git-repos/ondics-gdc-gdcbox/www/gdcbox/platforms.inc");
-/*
-    $gdcbox_version="0.1";
-    $testmode=FALSE; // einblenden von "Test" in Fuﬂzeile und "logout" bei Info.
-    $testmsg="";    // wird eingeblendet im footer
-
-    // basepath and baseurl depend on machine (default is gdcbox);
-    $basepath="/www-wifunbox";  
-    $baseurl="";
-    $machine="srv1";
-    if ($machine=="srv1") {
-        // ...for use on srv1.ondics.de
-        $basepath="/home/clauss/git-repos/ondics-gdc-gdcbox/www";
-        $baseurl="/gdcbox";
-    }
-    // now the real paths
-    $database=$basepath.'/gdcbox/gdcbox-db.sqlite';
-    $classinc=$basepath.'/gdcbox/classes.inc';
-    $myurl=$baseurl."/cgi-bin/gdcbox.php";
-    
-    // appstore access
-    $appstore_url="http://srv1.ondics.de/gdcbox/appstore/appstore.php";
-    $appstore_user="appstore";
-    $appstore_pass="appstore";
-    $apppath=$basepath."/gdcbox/apps";
-    
-    // cronjob-script
-    $cronjob_script='gdcbox_cronjob.php';
-    $cronjob_script_path=$basepath.'/gdcbox/'.$cronjob_script;
-    // cronjob logging
-    $cronjob_logfile="/tmp/gdcbox_cronjob.log";
-*/  
+    require_once($env["classinc"]);
 
     // datenbankzugriff herstellen
     if (! ($pdo=new PDO('sqlite:'.$env["database"])) ) {
         echo "<html><body>Fehler: DB-Zugriff</body></html>";
         exit;
     } 
-
 
     // eine neue session beginnen bzw. mit alter (serverseitiger) weiterarbeiten
     //session_start();
@@ -108,7 +77,6 @@
         return $proc_num;
     }
 
-    require_once($env["classinc"]);
 
     // page selector
     $action=isset($_GET['action'])?htmlentities($_GET['action'],ENT_QUOTES):'main';
@@ -491,23 +459,36 @@
             }
             echo "</tr>\n";
         }
-        
         // show device_configs
-        foreach ( $device->device_config_values as $key => $value) {
-            switch ($key) {
-                case 'NumValues': break;
-                case 'SysInfo': break;
-                default: 
-                    echo '<tr><td>'.$key.'</td><td><input type="text" size="50" name="'.
-                         $key.'" value="'.$value.'"></td></tr>';
+        foreach ( $device->device_config_values as $key => $valueattribs) {
+            $value=$valueattribs['value'];
+            // first extract all attribute specifications(separated by "|")
+            $attribs=explode('|',$valueattribs['attribs']); // separate attributes
+            // second build array $singleattribs with all attribute key/value pairs
+            $singleattribs="";
+            foreach ($attribs as $singleattrib) {
+                if ($singleattrib!="") {
+                    $singleattribs=explode(':',$singleattrib);
+                }
             }
+            // now display form elements considering specified attributes!
+
+            // if not visible, continue!
+            if (isset($singleattribs[0])
+                && $singleattribs[0]=="visible"
+                && $singleattribs[1]=="no")
+                continue;
+            
+            // display editable key/value            
+            echo '<tr><td>'.$key.'</td><td><input type="text" size="50" name="'.
+                         $key.'" value="'.$value.'"></td></tr>';
             echo "\n";    
         }
         echo "</table>";
         echo '<p><input type="submit" value=" Save Changes "></form></p>';
 
         if (isset($device->device_config_values['SysInfo'])
-             && $device->device_config_values['SysInfo']==true) {
+             && $device->device_config_values['SysInfo']['value']=='yes') {
             echo '<p>This device helps you configuring by displaying <br>';
             echo 'some Information about the system (opens in new window):<br>';
             echo '<form>';
@@ -524,12 +505,20 @@
         $device=new Device();
         $device->loadDeviceFromDB($device_id);
         // save values from html-form to device
-        foreach ($device->device_values as $key => $value )
+        foreach ($device->device_values as $key => $valueattribs) {
+            $newvalue=getValueFromURLSave($key);
             if ($key!='id' && $key!='generic_device_name')
                 $device->device_values[$key]=html_entity_decode(getValueFromURLSave($key));
-        foreach ($device->device_config_values as $key => $value) 
-            if ($key!='NumValues')
-                $device->device_config_values[$key]=html_entity_decode(getValueFromURLSave($key));
+        }
+                
+        foreach ($device->device_config_values as $key => $valueattribs) {
+            // save all keys. keys with "visible:no" are not in url!
+            $value=$valueattribs['value'];
+            $attribs=$valueattribs['attribs'];
+            $newvalue=getValueFromURLSave($key);
+            if ($newvalue!="")
+                $device->device_config_values[$key]['value']=html_entity_decode($newvalue);
+        }
         
         $device->saveDeviceToDB();
         echo '<p>Saved.</p>';
