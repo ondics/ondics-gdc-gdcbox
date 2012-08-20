@@ -1,6 +1,6 @@
 <?php
 
-    $apppath="/home/clauss/git-repos/ondics-gdc-gdcbox/appstore/apps";
+    $apppath="/home/clauss/git-repos/ondics-gdc-gdcbox/www/appstore/apps";
 
     // hier sind alle app gelistet. die zugehörige klasse ist <file> ohne endung.
     // später können anstelle .inc auch .zip dazukommen für mehrere dateien (incl.

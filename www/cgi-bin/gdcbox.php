@@ -245,7 +245,7 @@
         echo "<h2>GDCBox AppStore</h2>\n";
         
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $env["appstore_url"]."?action=applist&&machine_os=".$machine_os);
+        curl_setopt($ch, CURLOPT_URL, $env["appstore_url"]."?action=applist&machine_os=".$machine_os);
         curl_setopt($ch, CURLOPT_HEADER, false);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY); 

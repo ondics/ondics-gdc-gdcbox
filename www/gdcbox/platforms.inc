@@ -32,7 +32,7 @@
     // set local urls
     $env["myurl"] = $env["baseurl"]."/cgi-bin/gdcbox.php";
     // appstore access
-    $env["appstore_url"] = $env["baseurl"]."/appstore/appstore.php";
+    $env["appstore_url"] = "http://srv1.ondics.de/gdcbox/appstore/appstore.php";
     $env["appstore_user"] = "appstore";
     $env["appstore_pass"] = "appstore";
     // local cronjob-script
