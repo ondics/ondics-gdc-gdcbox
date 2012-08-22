@@ -1,7 +1,9 @@
 <?php
 
-    $apppath="/home/clauss/git-repos/ondics-gdc-gdcbox/www/appstore/apps";
-
+    //$apppath="/home/clauss/git-repos/ondics-gdc-gdcbox/www/appstore/apps";
+    require_once("../gdcbox/platforms.inc");
+    
+/*
     // hier sind alle app gelistet. die zugehörige klasse ist <file> ohne endung.
     // später können anstelle .inc auch .zip dazukommen für mehrere dateien (incl.
     // bilder etc.)
@@ -41,7 +43,41 @@
                 'platforms'=>'ANY',
                 'file'=>'testdevice.inc' ),
     );
+    echo "<p>vorher:</p>";
+    var_dump($applist);
+    unset($applist);
 
+*/    
+    // build array $applist containing all apps (from app directory)
+    // we extract 'name', 'version', 'platforms' and 'appfile' from each class
+    // 'platforms' has format "platform1,platform2,..." or "ANY" if platform independend
+    // supported platforms for gdcbox are defined in platforms.inc
+    $applist=array();
+    // we need classinc for device instantiation
+    require_once($env["classinc"]);
+    foreach(glob('./apps/*.inc') as $file) {
+        //echo "<p>file=[$file]</p>";
+        //require_once($file);
+        $file_content=file_get_contents($file);
+        //if (!preg_match("/^\s*class\s*(?'classname'\S*)\s*Device/",$file_content,$matches))
+        if (!preg_match("/(class[\s]*)([\w]*)([\s]*extends[\s]*)/",$file_content,$matches)) 
+            { echo "<p>no class found</p>"; continue; }
+        require_once($file);
+        //echo "<p>matches:<br>";var_dump($matches);echo "</p>";
+        $classname=$matches[2]; // just classname is relevant!
+        $device=new $classname();
+        $device->setDefaultValues();
+        $applist[]=array('name'     => $device->generic_device_specs['name'],
+                         'version'  => $device->generic_device_specs['version'],
+                         'platforms'=> $device->generic_device_specs['platforms'],
+                         'file'     => $device->generic_device_specs['appfile']);
+        unset($device);
+    }
+    /*
+    echo "<p>nacher:</p>";
+    var_dump($applist);
+    */
+    
     $action=isset($_GET['action'])?htmlentities($_GET['action'],ENT_QUOTES):'';
     $machine_os=isset($_GET['machine_os'])?htmlentities($_GET['machine_os'],ENT_QUOTES):'';
     
@@ -63,13 +99,13 @@
                 if ($applist[$i]['file'] == $appfile) break;
             if ($i<0) die("<p>error: app ".$appfile." nicht gefunden<p>");
             // jetzt download starten            
-            header("Content-Length: ".filesize($apppath."/".$appfile));
+            header("Content-Length: ".filesize("./apps/".$appfile));
             header('Content-Type: application/x-download');
             header('Content-Disposition: attachment; filename="'.$appfile.'"');
             header('Content-Transfer-Encoding: binary');
-            $fp=fopen($apppath."/".$appfile,"rb");
+            $fp=fopen("./apps/".$appfile,"rb");
             while($fp && !feof($fp) && (connection_status()==0)) {
-                print(fread($fp, filesize($apppath."/".$appfile)));
+                print(fread($fp, filesize("./apps/".$appfile)));
                 flush();
             }
             fclose($fp);

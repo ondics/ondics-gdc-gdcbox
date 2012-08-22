@@ -1,5 +1,4 @@
 <?php
-//require_once('classes.inc');
 
 class testdevice extends Device {
 
@@ -11,6 +10,7 @@ class testdevice extends Device {
         $this->generic_device_specs['description']='sollte nur zum Testen installiert werden';
         $this->generic_device_specs['url']='http://srv1.ondics.de/appstore/devicehelp.html';
         $this->generic_device_specs['appfile']='testdevice.inc';
+        $this->generic_device_specs['platforms']='ANY';//raspberry-pi';
         $this->device_defaults['description']='Testdevice ohne Network-Access. Liefert als Messwert immer 1';
         $this->device_defaults['location']='auf der GDCBox';
         $this->device_config_defaults['IP-Address']=array('value'=>'localhost','attribs'=>'');

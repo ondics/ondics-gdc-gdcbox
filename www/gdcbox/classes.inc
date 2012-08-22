@@ -5,7 +5,7 @@ require_once("/home/clauss/git-repos/ondics-gdc-gdcbox/www/gdcbox/platforms.inc"
 class Device {
     
     // default values, set in subclasses
-    protected $generic_device_specs = array();
+    public $generic_device_specs = array();  // we need extenal acceess for appstore!
     protected $device_defaults = array();
     protected $device_config_defaults = array();
     // parameters from db
@@ -27,7 +27,8 @@ class Device {
             'name_long'=>'',
             'description'=>'',
             'url'=>'',
-            'appfile'=>''
+            'appfile'=>'',
+            'platforms'=>'ANY',
         );  
         $this->device_defaults = array(
             'name'=>'',
@@ -53,6 +54,7 @@ class Device {
         if (!isset($this->generic_device_specs['version'])) die("init error: version missing");
         if (!isset($this->generic_device_specs['name']))    die("init error: name unset");
         if (!isset($this->generic_device_specs['appfile'])) die("init error: appfile unset");
+        if (!isset($this->generic_device_specs['platforms'])) die("init error: platforms unset");
 
         // overwrite device_default values
         $this->device_defaults['name']=$this->generic_device_specs['name'];

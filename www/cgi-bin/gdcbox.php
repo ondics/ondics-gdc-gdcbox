@@ -265,7 +265,7 @@
             echo '<table border="1">';
             echo '<tr><th>App</th><th>Version</th><th>Actions</th></tr>';
             foreach ($applist as $app ) {
-                echo '<tr><td>'.$app['name'].'</td><td>'.$app['ver'].'</td>';
+                echo '<tr><td>'.$app['name'].'</td><td>'.$app['version'].'</td>';
                 $query = $pdo->prepare("SELECT name,name_long FROM generic_devices ".
                                        "WHERE name='".$app['name']."'");
                 $query->execute();
