@@ -231,7 +231,36 @@ class Device {
                      "valuesstring='".$valuesstring."' ".
                      "WHERE device_id=".$this->device_values['id'];
         //if ($testmode) echo "<p>sql=".$sql."</p>";
-        $pdo->exec($sql);        
+        
+        // start transaction to avoid concurrent access in database
+        // if there is an open db-update, then wait for 0,25 seconds and try again!
+        $waiting = true; 
+        while ($waiting) {
+            try {
+                $pdo->beginTransaction();
+                $pdo->exec($sql);
+                echo "sleeping 5s...\n";
+                sleep(5);
+                $pdo->commit();
+                echo "committed & ready.\n";
+                $waiting = false;
+            } catch(PDOException $e) {
+                echo "Exception!!!\n";
+                
+                if(stripos($e->getMessage(), 'DATABASE IS LOCKED') !== false) {
+                    // This should be specific to SQLite, sleep for 0.25 seconds
+                    // and try again.  We do have to commit the open transaction first though
+                    $pdo->commit();
+                    usleep(250000);
+                    echo "waiting 250ms for next access...\n";
+                } else {
+                    // other error. rollback and throw one more error to be handled.
+                    echo "rolling back!\n";
+                    $pdo->rollBack();
+                    throw $e;
+                }
+            }
+        } 
     }
 
     // function is static for performance reasons: we don't need
