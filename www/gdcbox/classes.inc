@@ -239,8 +239,6 @@ class Device {
             try {
                 $pdo->beginTransaction();
                 $pdo->exec($sql);
-                echo "sleeping 5s...\n";
-                sleep(5);
                 $pdo->commit();
                 echo "committed & ready.\n";
                 $waiting = false;
@@ -252,10 +250,8 @@ class Device {
                     // and try again.  We do have to commit the open transaction first though
                     $pdo->commit();
                     usleep(250000);
-                    echo "waiting 250ms for next access...\n";
                 } else {
                     // other error. rollback and throw one more error to be handled.
-                    echo "rolling back!\n";
                     $pdo->rollBack();
                     throw $e;
                 }
