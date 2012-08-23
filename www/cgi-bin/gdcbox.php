@@ -22,11 +22,13 @@
         return isset($_GET[$key])?htmlentities($_GET[$key],ENT_QUOTES):''; 
     }
 
+    // to stop cron, all lines containing "gdcbox_" OR a crontab comment "# gdcbox_" are deleted
+    // comments are not working in cron with variable substitution.
     function cron_stop() {
-        $cronjobs=(int)shell_exec('crontab -l|grep gdcbox |wc -l');
+        $cronjobs=(int)shell_exec('crontab -l|grep gdcbox_ |wc -l');
         echo "<p>Currently $cronjobs device".($cronjobs!=1?'s are':'is').' running</p>';
         $tmpfile='/tmp/gdcbox.'.getmypid();
-        shell_exec('crontab -l|grep -v gdcbox > '.$tmpfile);
+        shell_exec('crontab -l|grep -v gdcbox_ > '.$tmpfile);
         shell_exec('crontab '.$tmpfile);
         unlink($tmpfile);
     }
@@ -40,10 +42,12 @@
         $proc_num=0;
         $tmpfile='/tmp/gdcbox.'.getmypid();
         shell_exec('crontab -l > '.$tmpfile);
-        $line_end=" # gdcbox\n"; 
+        $line_end=" # gdcbox_\n"; 
         file_put_contents($tmpfile,"################".$line_end,FILE_APPEND);
-        file_put_contents($tmpfile,"gdcbox_logfile=".$env["cronjob_logfile"].$line_end,FILE_APPEND);
-        file_put_contents($tmpfile,"gdcbox_cronjob=".$env["cronjob_script_path"].$line_end,FILE_APPEND);
+        // in variable substitution, comments are not allowed! so omitting $line_end!
+        // lines are recognized with variable name containing "gdcbox_"!!!
+        file_put_contents($tmpfile,"gdcbox_logfile=".$env["cronjob_logfile"]."\n",FILE_APPEND);
+        file_put_contents($tmpfile,"gdcbox_cronjob=".$env["cronjob_script_path"]."\n",FILE_APPEND);
         $crontime="";
         while ( $row = $query->fetch() ) {
             if ($row['active']=="no") continue;

@@ -21,7 +21,7 @@
             $env["basepath"] = "/home/clauss/git-repos/ondics-gdc-gdcbox/www";    
             $env["baseurl"] = "/gdcbox";
             break;
-        case 'raspberry':
+        case 'raspberry-pi':
             $env["basepath"] = "/var/www/gdcbox/ondics-gdc-gdcbox/www";
             $env["baseurl"] = "/gdcbox";
             break;
