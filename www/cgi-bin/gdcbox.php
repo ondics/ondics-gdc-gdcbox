@@ -46,6 +46,7 @@
         file_put_contents($tmpfile,"################".$line_end,FILE_APPEND);
         // in variable substitution, comments are not allowed! so omitting $line_end!
         // lines are recognized with variable name containing "gdcbox_"!!!
+        file_put_contents($tmpfile,"gdcbox_execdir=".$env["cronjob_execdir"]."\n",FILE_APPEND);
         file_put_contents($tmpfile,"gdcbox_logfile=".$env["cronjob_logfile"]."\n",FILE_APPEND);
         file_put_contents($tmpfile,"gdcbox_cronjob=".$env["cronjob_script_path"]."\n",FILE_APPEND);
         $crontime="";
@@ -64,7 +65,7 @@
                 }
             }
             // build crontab-entry
-            $cronjob=$crontime.'$gdcbox_cronjob '.$row['id'].
+            $cronjob=$crontime.'(cd $gdcbox_execdir; $gdcbox_cronjob '.$row['id'].')'.
                      ' >> $gdcbox_logfile 2>&1 # '.$row['name'].$line_end;
             echo '<p>adding cronjob ['.$cronjob.']</p>';
             file_put_contents($tmpfile,$cronjob,FILE_APPEND);

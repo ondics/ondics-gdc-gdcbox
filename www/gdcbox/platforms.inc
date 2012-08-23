@@ -41,6 +41,7 @@
     $env["appstore_user"] = "appstore";
     $env["appstore_pass"] = "appstore";
     // local cronjob-script
+    $env["cronjob_execdir"] = $env["basepath"]."/gdcbox/";
     $env["cronjob_script"] = 'gdcbox_cronjob.php';
     $env["cronjob_script_path"] = $env["basepath"].'/gdcbox/'.$env["cronjob_script"];
     $env["cronjob_logfile"] = "/tmp/gdcbox_cronjob.log";

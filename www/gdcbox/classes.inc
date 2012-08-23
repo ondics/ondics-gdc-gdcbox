@@ -1,6 +1,6 @@
 <?php
 
-require_once("../gdcbox/platforms.inc");
+require_once("platforms.inc");
 
 class Device {
     
@@ -230,7 +230,7 @@ class Device {
         $sql="UPDATE device_values SET timestamp='".date("Y-m-d H:i:s")."',".
                      "valuesstring='".$valuesstring."' ".
                      "WHERE device_id=".$this->device_values['id'];
-        if ($testmode) echo "<p>sql=".$sql."</p>";
+        //if ($testmode) echo "<p>sql=".$sql."</p>";
         $pdo->exec($sql);        
     }
 
