@@ -1,6 +1,6 @@
 <?php
 
-require_once("/home/clauss/git-repos/ondics-gdc-gdcbox/www/gdcbox/platforms.inc");
+require_once("../gdcbox/platforms.inc");
 
 class Device {
     
@@ -67,6 +67,7 @@ class Device {
     
     function createNewGenericDeviceInDB() {
         global $pdo;
+        global $testmode;
         echo "<p>Device::createNewGenericDeviceInDB()</p>";
         $values="";
         $fieldnames="";
@@ -78,37 +79,38 @@ class Device {
         $fieldnames.=",date_installed";
         $values.=", '".date("Y-m-d H:i:s")."'";
         $sql="INSERT INTO generic_devices (".$fieldnames.") VALUES (".$values.") ";
-        echo "<p>sql=".$sql."</p>";
+        if ($testmode) echo "<p>sql=".$sql."</p>";
         $pdo->exec($sql);
     }
     
     function removeGenericDeviceFromDB($generic_device_name) {
         global $apppath,$pdo, $env;
+        global $testmode;
         
         // first: delete local files (read filename from db)
         $query = $pdo->prepare("SELECT appfile FROM generic_devices ".
                                 "WHERE name='".$generic_device_name."'");
         $query->execute();
         if ($row = $query->fetch()) {
-            echo "<p>removing file ".$env["apppath"]."/".$row['appfile']."</p>";
+            if ($testmode) echo "<p>removing file ".$env["apppath"]."/".$row['appfile']."</p>";
             unlink($env["apppath"]."/".$row['appfile']);
         } else {
             echo "<p>error: Device::removeGenericDeviceFromDB!";
             return false;
         }
         // second: remove all devices_values from these devices
-        echo "<p>removing values for all devices to be removed</p>";
+        if ($testmode) echo "<p>removing values for all devices to be removed</p>";
         $pdo->exec("DELETE FROM device_values WHERE device_id IN ".
                    "( SELECT id FROM devices WHERE generic_device_name='".$generic_device_name."')");
         // third: remove all devices
-        echo "<p>removing configs for all devices to be removed</p>";
+        if ($testmode) echo "<p>removing configs for all devices to be removed</p>";
         $pdo->exec("DELETE FROM device_configs WHERE device_id IN ".
                    "( SELECT id FROM devices WHERE generic_device_name='".$generic_device_name."')");
         // fourth: remove generic_device
-        echo "<p>removing devices</p>";
+        if ($testmode) echo "<p>removing devices</p>";
         $pdo->exec("DELETE FROM devices WHERE generic_device_name='".$generic_device_name."'");
         // fifth: remove generic_device
-        echo "<p>removing generic_device</p>";
+        if ($testmode) echo "<p>removing generic_device</p>";
         $pdo->exec("DELETE FROM generic_devices WHERE name='".$generic_device_name."'");
         
         return true;
@@ -116,7 +118,8 @@ class Device {
 
     function createNewDeviceInDB() {
         global $pdo;
-        echo "<p>Device::createNewDeviceInDB()</p>";
+        global $testmode;
+
         // first create device
         $values="";
         $fieldnames="";
@@ -134,7 +137,7 @@ class Device {
             $attribs=$valueattribs['attribs'];
             $sql="INSERT INTO device_configs (device_id,key,value,attribs) ".
                  "VALUES (".$device_id.",'".$key."','".$value."','".$attribs."')";
-            echo "<p>sql=".$sql."</p>";
+            if ($testmode) echo "<p>sql=".$sql."</p>";
             $pdo->exec($sql);
         }
         // then create one entry for all measured values of this device (format is
@@ -144,7 +147,7 @@ class Device {
             $valuesstring.=($valuesstring==""?"":"|")."-";
         $sql="INSERT INTO device_values (device_id,timestamp,valuesstring) ".
              "VALUES (".$device_id.",'".date("Y-m-d H:i:s")."','".$valuesstring."')";
-        echo "<p>sql=".$sql."</p>";
+        if ($testmode) echo "<p>sql=".$sql."</p>";
         $pdo->exec($sql);        
         
         return $device_id;
@@ -174,6 +177,7 @@ class Device {
 
     function saveDeviceToDB() {
         global $pdo;
+        global $testmode;
         if (!$this->loaded) return;
         $sqlfields="";
         foreach ($this->device_values as $key => $value) {
@@ -183,7 +187,7 @@ class Device {
                 default: $sqlfields.=($sqlfields==""?"":", ").$key."='".$value."'";
             }
         }
-        echo "<p>".$sqlfields."</p>";
+        if ($testmode) echo "<p>".$sqlfields."</p>";
         $pdo->exec("UPDATE devices SET ".$sqlfields." WHERE id=".$this->device_values['id']);
         foreach ($this->device_config_values as $key => $valueattribs)  {
             if ($key!='NumValues')
@@ -194,14 +198,15 @@ class Device {
 
     function removeDeviceFromDB($id) {
         global $pdo;
+        global $testmode;
         // first: remove from device_configs
-        echo "<p>removing device configs... </p>";
+        if ($testmode) echo "<p>removing device configs... </p>";
         $pdo->exec("DELETE FROM device_configs WHERE device_id=".$id);
         // second: remove device
-        echo "<p>removing device</p>";
+        if ($testmode) echo "<p>removing device</p>";
         $pdo->exec("DELETE FROM devices WHERE id=".$id);
         // third: remove values
-        echo "<p>removing values</p>";
+        if ($testmode) echo "<p>removing values</p>";
         $pdo->exec("DELETE FROM device_values WHERE device_id=".$id);
         
     }
@@ -219,12 +224,13 @@ class Device {
     }
     
     function saveValuesToDB() {
-        global $pdo;        
+        global $pdo;
+        global $testmode;
         $valuesstring=implode("|",$this->values);
         $sql="UPDATE device_values SET timestamp='".date("Y-m-d H:i:s")."',".
                      "valuesstring='".$valuesstring."' ".
                      "WHERE device_id=".$this->device_values['id'];
-        //echo "<p>sql=".$sql."</p>";
+        if ($testmode) echo "<p>sql=".$sql."</p>";
         $pdo->exec($sql);        
     }
 

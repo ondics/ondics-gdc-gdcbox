@@ -1,7 +1,7 @@
 <?php
 
     $version="2.0a";
-    $testmode=FALSE; // einblenden von "Test" in Fußzeile und "logout" bei Info.
+    $testmode=true; // einblenden diversen Testhilfen ("Test" in Footer, DB-Display)
     $testmsg="";     // wird eingeblendet im footer
 
     // determine platform
@@ -21,6 +21,11 @@
             $env["basepath"] = "/home/clauss/git-repos/ondics-gdc-gdcbox/www";    
             $env["baseurl"] = "/gdcbox";
             break;
+        case 'raspberry':
+            $env["basepath"] = "/var/www/gdcbox/ondics-gdc-gdcbox/www";
+            $env["baseurl"] = "/gdcbox";
+            break;
+
         default:
     }
     

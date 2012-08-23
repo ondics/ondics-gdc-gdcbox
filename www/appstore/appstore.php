@@ -1,60 +1,15 @@
 <?php
 
-    //$apppath="/home/clauss/git-repos/ondics-gdc-gdcbox/www/appstore/apps";
     require_once("../gdcbox/platforms.inc");
-    
-/*
-    // hier sind alle app gelistet. die zugehörige klasse ist <file> ohne endung.
-    // später können anstelle .inc auch .zip dazukommen für mehrere dateien (incl.
-    // bilder etc.)
-    $applist = array (
-        array(  'name'=>'Lufft WS600',
-                'ver'=>'0.0.1',
-                'platforms'=>'ANY',
-                'file'=>'lufft_ws600.inc' ),
-        array(  'name'=>'Lufft L2P',
-                'ver'=>'0.1.0',
-                'platforms'=>'ANY',
-                'file'=>'lufft_l2p.inc' ),        
-        array(  'name'=>'AVR Net IO',
-                'ver'=>'1.0.0',
-                'platforms'=>'ANY',
-                'file'=>'avrnetio.inc' ),        
-        array(  'name'=>'Host Ping',
-                'ver'=>'0.0.1', 
-                'platforms'=>'ANY',
-                'file'=>'hostping.inc' ),
-        array(  'name'=>'Raspberry PI I2C',
-                'ver'=>'0.0.1', 
-                'platforms'=>'raspberry-pi',
-                'file'=>'rasppi-i2c.inc' ),
-        array(  'name'=>'Raspberry PI 1-Wire Sensor',
-                'ver'=>'0.0.2', 
-//                'platforms'=>'raspberry-pi',
-                'platforms'=>'ANY',
-                'file'=>'rasppi_1wire_sensor.inc' ),
-        array(  'name'=>'Raspberry PI 1-Wire Actor',
-                'ver'=>'0.0.1', 
-//                'platforms'=>'raspberry-pi',
-                'platforms'=>'ANY',
-                'file'=>'rasppi_1wire_actor.inc' ),                
-        array(  'name'=>'Testdevice',
-                'ver'=>'0.0.1',
-                'platforms'=>'ANY',
-                'file'=>'testdevice.inc' ),
-    );
-    echo "<p>vorher:</p>";
-    var_dump($applist);
-    unset($applist);
 
-*/    
-    // build array $applist containing all apps (from app directory)
-    // we extract 'name', 'version', 'platforms' and 'appfile' from each class
+    // we need classinc for device instantiation
+    require_once($env["classinc"]);
+    
+    // build array $applist containing all apps (from app directory):
+    // how? we extract 'name', 'version', 'platforms' and 'appfile' from each class
     // 'platforms' has format "platform1,platform2,..." or "ANY" if platform independend
     // supported platforms for gdcbox are defined in platforms.inc
     $applist=array();
-    // we need classinc for device instantiation
-    require_once($env["classinc"]);
     foreach(glob('./apps/*.inc') as $file) {
         //echo "<p>file=[$file]</p>";
         //require_once($file);
@@ -73,15 +28,18 @@
                          'file'     => $device->generic_device_specs['appfile']);
         unset($device);
     }
-    /*
-    echo "<p>nacher:</p>";
-    var_dump($applist);
-    */
     
+    //
+    // appstore-main processing
+    //
     $action=isset($_GET['action'])?htmlentities($_GET['action'],ENT_QUOTES):'';
     $machine_os=isset($_GET['machine_os'])?htmlentities($_GET['machine_os'],ENT_QUOTES):'';
     
     switch ($action) {
+        // applist returns json-encoded list with all apps
+        // available for specified platform
+        // request: action=applist&machine_os=<platform>
+        // <platform> is optional and may be raspberry, ubuntu, openwrt,... 
         case 'applist':
             $applist_platform=array();
             foreach($applist as $app) {
@@ -91,6 +49,9 @@
             }
             echo json_encode($applist_platform);
             break;
+        
+        // download returns requested app as binary file
+        // currently, only one file (*.inc) is transfered
         case 'download':
             $appfile=$_GET["appfile"];
             // prüfen, ob app auch in applist ist.
@@ -110,6 +71,7 @@
             }
             fclose($fp);
             break;
+        
         default:
             die("<p>error in appstore: unknown command</p>");
     }

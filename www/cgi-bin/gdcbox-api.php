@@ -5,6 +5,7 @@
     //  (C) Ondics,2012
     */
     require_once("../gdcbox/platforms.inc");
+    require_once($env["classinc"]);
 
     // datenbankzugriff herstellen
     if (! ($pdo=new PDO('sqlite:'.$env["database"])) ) {
@@ -19,7 +20,6 @@
         return isset($_GET[$key])?htmlentities($_GET[$key],ENT_QUOTES):''; 
     }
 
-    require_once($env["classinc"]);
     
     $error="";  // save errors here  
     $result=""; // result-array for api-calls

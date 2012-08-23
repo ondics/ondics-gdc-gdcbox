@@ -6,7 +6,7 @@
     */
 
 
-    require_once("/home/clauss/git-repos/ondics-gdc-gdcbox/www/gdcbox/platforms.inc");
+    require_once("../gdcbox/platforms.inc");
     require_once($env["classinc"]);
 
     // datenbankzugriff herstellen
@@ -14,9 +14,6 @@
         echo "<html><body>Fehler: DB-Zugriff</body></html>";
         exit;
     } 
-
-    // eine neue session beginnen bzw. mit alter (serverseitiger) weiterarbeiten
-    //session_start();
 
     //////////////////////////////////////////////
     // declare some functions for global use
@@ -199,7 +196,7 @@
         }
         echo "</table></p>";
         
-        echo '<h2>GDCBox Administration</h2>';
+        echo '<h2>GDCBox System Information</h2>';
         echo '<p><table border="1">';
         echo '<tr><td>Current Date & Time</td><td> <b>'.date("Y-m-d H:i:s").'</b></td></tr>';
         $data = shell_exec('uptime');
@@ -211,12 +208,14 @@
         echo '<tr><td>Current User</td><td><b>'.shell_exec('whoami').'</b></td></tr>';
 
         echo "</table></p>\n";
-
-        echo '<h2>System Testing</h2>';
-        echo '<ul>';
-        echo '<li><a href="'.$env["myurl"].'?action=test-dbdump">Show Database Contents</a></li>';
-        echo '<li><a href="'.$env["myurl"].'?action=test-cronjoblogfile">Show Cronjobs-Logfile</a></li>';
-        echo '</ul>';
+        
+        if ($testmode) {
+            echo '<h2>System Testing</h2>';
+            echo '<ul>';
+            echo '<li><a href="'.$env["myurl"].'?action=test-dbdump">Show Database Contents</a></li>';
+            echo '<li><a href="'.$env["myurl"].'?action=test-cronjoblogfile">Show Cronjobs-Logfile</a></li>';
+            echo '</ul>';
+        }
         
 
 
@@ -319,7 +318,7 @@
                     fwrite($fp,$httpBody);
                     fclose($fp);
                     echo "done (".strlen($httpBody)." Bytes)</p>";
-                    echo "<p>Installing App <b>".$name."</b> from ".$appfile." ... </p>";
+                    echo "<p>Installing App <b>".$name."</b> locally (".$appfile.")</p>";
                     require_once($appfile);
                     // classname ist filename ohne endung!
                     $classname=substr($file,0,strpos($file,"."));
