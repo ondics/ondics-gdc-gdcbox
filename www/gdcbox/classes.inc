@@ -226,37 +226,73 @@ class Device {
     function saveValuesToDB() {
         global $pdo;
         global $testmode;
+        $error="";
         $valuesstring=implode("|",$this->values);
         $sql="UPDATE device_values SET timestamp='".date("Y-m-d H:i:s")."',".
                      "valuesstring='".$valuesstring."' ".
                      "WHERE device_id=".$this->device_values['id'];
         //if ($testmode) echo "<p>sql=".$sql."</p>";
-        
+
+        $pdo->exec($sql);
+        //usleep(rand(100000,2000000));        
+        $dberror=$pdo->errorInfo();
+        if (stripos($dberror[2], 'DATABASE IS LOCKED') !== false)
+            $error.="db was locked. value not saved to db.\n";
+        return $error;
+
+
+/*
+        $pdo->setAttribute(PDO::ATTR_TIMEOUT, 10);
         // start transaction to avoid concurrent access in database
         // if there is an open db-update, then wait for 0,25 seconds and try again!
         $waiting = true; 
         while ($waiting) {
+            $pdo->exec($sql);
+            $dberror=$pdo->errorInfo();
+            if (stripos($dberror[2], 'DATABASE IS LOCKED') !== false) {
+                echo "saveValuesToDB::db locked.waiting for 0,5s\n";
+                usleep(500000);
+                //$pdo->exec("select * from device_values where device_id=0");
+                //print_r( $pdo->errorInfo() );  
+            } else {
+                usleep(100000);
+                $waiting = false;
+            }
+        }
+/*
+        $waiting = true; 
+        $pdo->setAttribute(PDO::ATTR_TIMEOUT, 1);
+        while ($waiting) {
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             try {
-                $pdo->beginTransaction();
+                //$pdo->beginTransaction();
                 $pdo->exec($sql);
-                $pdo->commit();
-                echo "committed & ready.\n";
+                //$stmt=$pdo->prepare($sql);
+                //$pdo->execute();
+                //var_dump($pdo->errorInfo());
+                //echo "count=[$count]\n";
+                echo "saveValuesToDB::db updated. waiting 5s\n"; sleep(5);
+                //$pdo->commit();
                 $waiting = false;
             } catch(PDOException $e) {
-                echo "Exception!!!\n";
-                
+                echo "exception!\n";
                 if(stripos($e->getMessage(), 'DATABASE IS LOCKED') !== false) {
                     // This should be specific to SQLite, sleep for 0.25 seconds
                     // and try again.  We do have to commit the open transaction first though
-                    $pdo->commit();
-                    usleep(250000);
+                    echo "saveValuesToDB::db locked.waiting for 2s\n";
+                    //unset($e);
+                    sleep(2);
+                    //$pdo->commit();
+                    //usleep(500000);
+
                 } else {
                     // other error. rollback and throw one more error to be handled.
-                    $pdo->rollBack();
+                    //$pdo->rollBack();
                     throw $e;
                 }
             }
-        } 
+        }
+*/       
     }
 
     // function is static for performance reasons: we don't need

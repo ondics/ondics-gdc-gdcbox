@@ -12,11 +12,18 @@
         if ($stop) die("aborting!\n");
         echo "\n";
     }
+
+    // workaround for simultaneously started processes (avoid database locking)
+    // wait some time than start script
+    $waitingtime=rand(100000,2000000);
+    //echo "startup waiting $waitingtime ms. \n";
+    usleep($waitingtime);
+
     
     // datenbankzugriff herstellen
     if (! ($pdo=new PDO('sqlite:'.$env["database"])) )
         output("error: database access",true);
-
+    
     require_once($env["classinc"]);
     
     // get device_id from command line (as specifioed in crontab)
@@ -66,12 +73,11 @@
     $values_to_print=implode("|",$device->values);
     output("values=$values_to_print");
 
-    if ($error!="") {
-        output("error: ".$error,true);
-    } else {
-        // save values to db for later (api) access
-        $device->saveValuesToDB();    
-    }
+    if ($error!="") output("error: ".$error,true);  // abort on error!
+    
+    // save values to db for later (api) access
+    $error=$device->saveValuesToDB();
+    if ($error!="") output("error: ".$error,true);  // abort on error!
     
     // prepare GDC-Url 
     $gdc_url=$env["gdc_baseurl"]."?sid=".$device->device_values['gdc_sid'];
