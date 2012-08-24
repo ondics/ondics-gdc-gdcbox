@@ -251,7 +251,7 @@ class Device {
             // check if my process-id is minimum
             foreach ($procs_array as $process) {
                 if (strlen(trim($process))) {
-                    $process_parts=explode(" ",$process);
+                    $process_parts=explode(" ",trim($process));
                     //echo "pid checked=$process_parts[0]\n";
                     if (is_numeric($process_parts[0]) && $process_parts[0]>$mypid) {
                         //echo "there is a bigger pid ($process_parts[0]) than mine ($mypid) running. breaking.\n";
