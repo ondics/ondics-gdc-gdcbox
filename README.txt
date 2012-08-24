@@ -5,6 +5,8 @@ Die GDCBox V2 wurde komplett neu in PHP implementiert.
 Sie besteht aus 2 Teilen, der eigentlichen GDCBox
 und dem AppStore.
 
+(C) Ondics GmbH, 2012
+
 TODOs
 -----
 - Bilder für Apps (.inc -> .zip)
@@ -13,6 +15,7 @@ TODOs
 - Installation/Test/Distro für Raspberry PI
 - Oberfläche auf JQuery(mobile) umstellen
 - Anzeige-Geräte einbauen (Aktoren)
+- Versionsnummern
 
 
 AppStore
