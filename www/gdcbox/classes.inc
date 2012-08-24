@@ -224,75 +224,91 @@ class Device {
     }
     
     function saveValuesToDB() {
-        global $pdo;
+        global $pdo,$env;
         global $testmode;
         $error="";
         $valuesstring=implode("|",$this->values);
         $sql="UPDATE device_values SET timestamp='".date("Y-m-d H:i:s")."',".
                      "valuesstring='".$valuesstring."' ".
                      "WHERE device_id=".$this->device_values['id'];
+        
         //if ($testmode) echo "<p>sql=".$sql."</p>";
-
-        $pdo->exec($sql);
-        //usleep(rand(100000,2000000));        
-        $dberror=$pdo->errorInfo();
-        if (stripos($dberror[2], 'DATABASE IS LOCKED') !== false)
-            $error.="db was locked. value not saved to db.\n";
-        return $error;
-
-
-/*
-        $pdo->setAttribute(PDO::ATTR_TIMEOUT, 10);
+        
+        // write sql to temp-file for deferred execution
+        $mypid=getmypid();
+        $tempfile=$env["tmp_dir"]."/gdcbox_cronjob.sql.$mypid";
+        file_put_contents($tempfile,$sql);
+        
+        // now check, if there are some sql's to execute
+        // -> but only execute them, if my pid is the biggest of
+        // all currently running gdcbox_cronjob processes!
+        // (to avoid database locking)
+        $execute_sql=true;
+        $procs_running=shell_exec("ps ax| grep ".$env["cronjob_script"]." | grep -v grep | grep -v $mypid");
+        //echo "-------procs_running nacher (ohne $mypid):---------\n$procs_running\n---------\n";
+        if ($procs_running!="") {
+            $procs_array=explode("\n",$procs_running);
+            // check if my process-id is minimum
+            foreach ($procs_array as $process) {
+                if (strlen(trim($process))) {
+                    $process_parts=explode(" ",$process);
+                    //echo "pid checked=$process_parts[0]\n";
+                    if (is_numeric($process_parts[0]) && $process_parts[0]>$mypid) {
+                        echo "there is a bigger pid ($process_parts[0]) than mine ($mypid) running. breaking.\n";
+                        $execute_sql=false;
+                        break;
+                    }
+                }
+            }
+        }
+        if ($execute_sql) {
+            echo "my pid ($mypid) is the biggest pid. now writing all sql's to db.\n";
+            $count=0;
+            foreach(glob($env["tmp_dir"]."/gdcbox_cronjob.sql.*") as $sqlfile) {     
+                //echo "sqlfile executed: $sqlfile ";
+                $sql=file_get_contents($sqlfile);
+                //echo "[$sql] \n";
+                $pdo->exec($sql);
+                // remove file after sql execution
+                unlink($sqlfile);
+                $count++;
+            }
+            echo "ready: written $count sql's to database\n";
+        } 
+        
+/*  this code does'nt work. database does never get unlocked again :-( 
         // start transaction to avoid concurrent access in database
         // if there is an open db-update, then wait for 0,25 seconds and try again!
         $waiting = true; 
         while ($waiting) {
-            $pdo->exec($sql);
-            $dberror=$pdo->errorInfo();
-            if (stripos($dberror[2], 'DATABASE IS LOCKED') !== false) {
-                echo "saveValuesToDB::db locked.waiting for 0,5s\n";
-                usleep(500000);
-                //$pdo->exec("select * from device_values where device_id=0");
-                //print_r( $pdo->errorInfo() );  
-            } else {
-                usleep(100000);
-                $waiting = false;
-            }
-        }
-/*
-        $waiting = true; 
-        $pdo->setAttribute(PDO::ATTR_TIMEOUT, 1);
-        while ($waiting) {
+            $pdo->setAttribute(PDO::ATTR_TIMEOUT, 1);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             try {
-                //$pdo->beginTransaction();
+                $pdo->exec("BEGIN EXCLUSIVE TRANSACTION");
                 $pdo->exec($sql);
-                //$stmt=$pdo->prepare($sql);
-                //$pdo->execute();
-                //var_dump($pdo->errorInfo());
-                //echo "count=[$count]\n";
-                echo "saveValuesToDB::db updated. waiting 5s\n"; sleep(5);
-                //$pdo->commit();
+                echo "saveValuesToDB::db updated. waiting 0s\n"; sleep(0);
+                $pdo->exec("COMMIT");
                 $waiting = false;
-            } catch(PDOException $e) {
-                echo "exception!\n";
-                if(stripos($e->getMessage(), 'DATABASE IS LOCKED') !== false) {
-                    // This should be specific to SQLite, sleep for 0.25 seconds
-                    // and try again.  We do have to commit the open transaction first though
-                    echo "saveValuesToDB::db locked.waiting for 2s\n";
-                    //unset($e);
-                    sleep(2);
-                    //$pdo->commit();
-                    //usleep(500000);
-
-                } else {
-                    // other error. rollback and throw one more error to be handled.
-                    //$pdo->rollBack();
-                    throw $e;
+            } catch(PDOException $e1) {
+                $errorinfo=$pdo->errorInfo();
+                echo "errorInfo=[".$errorinfo[2]."]\n";
+                echo "saveValuesToDB::exception1 ".$e1->getMessage().".\n";
+                if (stripos($e1->getMessage(), 'database is locked') !== false) {
+                    echo "saveValuesToDB::db locked.waiting for 5s\n";
+                    sleep(5);
+                    
+                    try {
+                        echo "saveValuesToDB::trying to END TRANSATION\n";
+                        $pdo->exec("COMMIT");
+                    } catch(PDOException $e2) {
+                        echo "saveValuesToDB::exception2 - [".$e2->getMessage()."] - ???!\n";
+                    }
+                    
+                    $pdo=new PDO('sqlite:'.$env["database"]);
                 }
             }
         }
-*/       
+*/
     }
 
     // function is static for performance reasons: we don't need

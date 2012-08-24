@@ -41,14 +41,15 @@
     $env["appstore_user"] = "appstore";
     $env["appstore_pass"] = "appstore";
     // local cronjob-script
+    $env["tmp_dir"] = "/tmp";
     $env["cronjob_execdir"] = $env["basepath"]."/gdcbox/";
     $env["cronjob_script"] = 'gdcbox_cronjob.php';
     $env["cronjob_script_path"] = $env["basepath"].'/gdcbox/'.$env["cronjob_script"];
-    $env["cronjob_logfile"] = "/tmp/gdcbox_cronjob.log";
+    $env["cronjob_logfile"] = $env["tmp_dir"]."/gdcbox_cronjob.log";
     // gdc-api access
     $env["gdc_baseurl"] = "http://gdc.ondics.de/gdc-da.php";
     // logging for gdcbox api-access
-    $env["api_logfile"] = "/tmp/gdcbox_api.log";
+    $env["api_logfile"] = $env["tmp_dir"]."/gdcbox_api.log";
     $env["api_url"] = $env["baseurl"]."/cgi-bin/gdcbox-api.php";
 
 ?>

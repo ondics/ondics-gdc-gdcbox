@@ -13,12 +13,13 @@
         echo "\n";
     }
 
+/*
     // workaround for simultaneously started processes (avoid database locking)
     // wait some time than start script
     $waitingtime=rand(100000,2000000);
     //echo "startup waiting $waitingtime ms. \n";
     usleep($waitingtime);
-
+*/
     
     // datenbankzugriff herstellen
     if (! ($pdo=new PDO('sqlite:'.$env["database"])) )
