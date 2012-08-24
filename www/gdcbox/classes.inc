@@ -254,7 +254,7 @@ class Device {
                     $process_parts=explode(" ",$process);
                     //echo "pid checked=$process_parts[0]\n";
                     if (is_numeric($process_parts[0]) && $process_parts[0]>$mypid) {
-                        echo "there is a bigger pid ($process_parts[0]) than mine ($mypid) running. breaking.\n";
+                        //echo "there is a bigger pid ($process_parts[0]) than mine ($mypid) running. breaking.\n";
                         $execute_sql=false;
                         break;
                     }
@@ -262,7 +262,7 @@ class Device {
             }
         }
         if ($execute_sql) {
-            echo "my pid ($mypid) is the biggest pid. now writing all sql's to db.\n";
+            echo "my pid ($mypid) is the biggest pid. winning :-) now writing all sql's to db.\n";
             $count=0;
             foreach(glob($env["tmp_dir"]."/gdcbox_cronjob.sql.*") as $sqlfile) {     
                 //echo "sqlfile executed: $sqlfile ";
@@ -274,6 +274,8 @@ class Device {
                 $count++;
             }
             echo "ready: written $count sql's to database\n";
+        } else {
+            echo "ops, parallel running update. i'm loosing :-(\n";
         } 
         
 /*  this code does'nt work. database does never get unlocked again :-( 
