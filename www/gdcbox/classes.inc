@@ -92,8 +92,9 @@ class Device {
                                 "WHERE name='".$generic_device_name."'");
         $query->execute();
         if ($row = $query->fetch()) {
-            if ($testmode) echo "<p>removing file ".$env["apppath"]."/".$row['appfile']."</p>";
-            unlink($env["apppath"]."/".$row['appfile']);
+            if ($testmode) echo "<p>removing dir ".$env["apppath"]."/".$row['appfile'].'/</p>';
+            shell_exec("cd ".$env["apppath"]." && rm -rf ".$env["apppath"]."/".$row['appfile']);
+            unlink($env["apppath"]."/".$row['appfile'].".gz");
         } else {
             echo "<p>error: Device::removeGenericDeviceFromDB!";
             return false;

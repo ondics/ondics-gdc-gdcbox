@@ -9,11 +9,9 @@ und dem AppStore.
 
 TODOs
 -----
-- Bilder für Apps (.inc -> .zip)
 - weitere Apps (Web-Grab-Apps!)
 - WS500 konkret einbinden
 - Installation/Test/Distro für Raspberry PI
-- Oberfläche auf JQuery(mobile) umstellen
 - Anzeige-Geräte einbauen (Aktoren)
 - Versionsnummern
 
@@ -50,6 +48,5 @@ das Wesentliche beschränken. Ist eigentich ganz leicht!
 Eine neue App wird am Besten wie folgt erstellt:
 - Kopieren einer bestehenden App aus ./appstore/apps
 - Anpassen der neuen App
-- Eintragen der App in der AppStore (in ./appstore/appstore.php)
 Fertig!
 

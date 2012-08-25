@@ -13,8 +13,8 @@
     if (! ($pdo=new PDO('sqlite:'.$env["database"])) ) {
         echo "<html><body>Fehler: DB-Zugriff</body></html>";
         exit;
-    } 
-
+    }
+    
     //////////////////////////////////////////////
     // declare some functions for global use
     //
@@ -87,21 +87,47 @@
     echo '<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">';
     echo '<head>';
     echo '<title>GDCBox</title>';
+    
+    //echo '<meta name="viewport" content="width=device-width, initial-scale=1"> ';
+    //echo '<meta name="viewport" > ';
+    //echo '<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no">';
+    echo '<meta name="viewport" content="width=device-width; initial-scale=0.5; minimum-scale=1.0; maximum-scale=4.0;user-scalable=yes">';
+
+    echo '<link rel="stylesheet" href="'.$env["baseurl"].'/jqm/jquery.mobile-1.1.0/jquery.mobile-1.1.0.min.css" />';
+    echo '<script src="'.$env["baseurl"].'/jqm/jquery-1.6.4.min.js"></script>';
+    echo '<script src="'.$env["baseurl"].'/jqm/jquery.mobile-1.1.0/jquery.mobile-1.1.0.min.js"></script>';
+    // gdc-specific styles
+    echo '<link rel="stylesheet" type="text/css" href="'.$env["baseurl"].'/gdcbox/gdcbox.css">';
+
     echo '</head>';
     echo '<body>';
-          
+
+
+    // jquery themeing
+    echo '<div data-role="page" class="type-interior">';
+
+    // jquery: Header of Page
+    echo '<div data-role="header" data-position="fixed" data-theme="b">';
+    echo '<h1>GDCBox</h1>';
+    echo '</div><!-- /header -->';
+
+    // jquery: content
+    echo '<div data-role="content" data-theme="b">';
+
+         
     // fuer navigation im footer
     $zurueckaction='.';
-
     
     //////////////////////////////////////////
     //
     // main program starts here (all menu selections are here)
     //
     //////////////////////////////////////////
-           
-    if ($action=='main') {
-
+    
+    switch ($action) {       
+    
+    case "main":
+        
         // Date and time are unset if system is powered on
         if (strtotime(date("Y-m-d")) < strtotime("2012-05-01") ) {
             echo '<p>Date & Time seem not to is not be set. </p>';
@@ -116,10 +142,13 @@
             echo '<input type="submit" value=" Datum und Zeit setzen "></td></tr></table>';
             echo "</form>\n";
         }
+        
 
-        // display all devices installed
-        echo '<h2>Installed Devices</h2>';
-        echo '<p>Devices available on this GDCBox (sort by ';
+        // display all devices installed ("app-style")
+        echo '<div data-role="header" data-theme="d"><h1>Installed Devices</h1></div>';
+        echo '<div class="ui-body ui-body-d">';
+        
+        echo '<p style="font-size:small;">Devices available on this GDCBox (sort by ';
         $appsort=getValueFromURLSave("appsort");
         $appsorturlstub='<a href="'.$env["myurl"].'?action=main&';
         echo $appsort=='active'?'active, ':$appsorturlstub.'appsort=active">active</a>, ';
@@ -128,69 +157,133 @@
         echo $appsort=='name'?'Name':$appsorturlstub.'appsort=name">Name</a>';
         echo ')</p>';
         switch ($appsort) {
-            case 'active': $sqlorderby="ORDER BY active DESC"; break; // no after yes
-            case 'latest': $sqlorderby="ORDER BY id DESC"; break; 
-            case 'app': $sqlorderby="ORDER BY generic_device_name ASC"; break;
-            default: $sqlorderby="ORDER BY name ASC";
+            case 'active': $sqlorderby="d.active DESC"; break; // no after yes
+            case 'latest': $sqlorderby="d.id DESC"; break; 
+            case 'app': $sqlorderby="d.generic_device_name ASC"; break;
+            default: $sqlorderby="d.name ASC";
         }
-        $query = $pdo->prepare("SELECT * FROM devices ".$sqlorderby);
+        $query = $pdo->prepare("SELECT gd.appfile, d.id, d.name, d.location, d.gdc_send, d.active ".
+                               "FROM devices d, generic_devices gd ".
+                               "WHERE d.generic_device_name=gd.name ".
+                               "ORDER BY ".$sqlorderby);
         $query->execute();
         $row = $query->fetch();
-        echo '<p>';
-        echo '<table border="0" cellspacing="10">';
+        //var_dump($row);
         if (!$row) {
-            echo '<tr><p>No devices installed<p>';
+            echo '<p>No devices installed<p>';
         } else {
-            // layouting: 3 apps in one row (width 130 px)
-            $appcount=1;
-            $columns=3;
-            do {
-                if ($appcount % $columns == 1) echo '<tr>';
-                // colors: grey=inactive, green=active, blue=do not send to gdc
-                if ($row['active']=="no") $bgcolor='bgcolor="#ddd"';
-                elseif ($row['gdc_send']=="no") $bgcolor='bgcolor="#6899d3"';
-                else $bgcolor='bgcolor="#65e080"';
-                //echo '<td bgcolor="'.$bgcolor.'" valign="bottom">';
-                echo '<td '.$bgcolor.' valign="bottom">';
-                
-                echo '<table border="0" cellspacing="10" width="130">';
-                //echo '<tr><td style="font-size:small">'.$row['description'].'</td></tr>';
-                echo '<tr><td style="font-size:small">'.$row['location'].'</td></tr>';
-                echo '<tr><td>';
-                // configure
-                echo '<form action="'.$env["myurl"].'" method="get">';
-                echo '<input type="hidden" name="action" value="configuredevice">';
-                echo '<input type="hidden" name="device_id" value="'.$row['id'].'">';
-                echo '<input type="submit" value=" Configure... "></form>';
-                echo '</td></tr>';
-                echo '<tr><td align="center" style="font-weight:bold">'.$row['name'].'</td></tr>';
-                echo '</table></td>';
-                if ($appcount % $columns == 0) echo '</tr>';
+            // background color of app square
+            define("GREEN","65e080");
+            define("WHITE","ffffff");
+            define("BLUE","6899d3");
+            define("GREY","dddddd");
+            
+            echo '<table cellspacing="2"><tbody style="font-size:x-small;"><tr>';
+            echo '<td width="20" bgcolor="#'.GREY.'"></td><td>inactive</td>';
+            echo '<td width="5"></td>';            
+            echo '<td width="20" style="border:1px solid #bbb;" bgcolor="#'.WHITE.'"></td><td>Device ok</td>';
+            echo '<td width="5"></td>';
+            echo '<td width="20" bgcolor="#'.BLUE.'"></td><td>GDC active</td>';
+            echo '</tr></tbody></table>';
+            echo '<p></p>';
+            
+            echo '<p><table class="app-table"><tr>';
+
+            // layouting: one app needs width of image + 2 x margin + 30x left margin
+            // -> break, when width is reached
+            $app_image_width=114;
+            $app_image_margin=5;
+            //$app_image_size_percent=100;
+            if (stripos($_SERVER['HTTP_USER_AGENT'],"android") ||
+                stripos($_SERVER['HTTP_USER_AGENT'],"iPhone"))
+                $app_image_size_percent=50;
+            else
+                $app_image_size_percent=100;
+            $app_image_size=(int)($app_image_width*($app_image_size_percent/100));
+            $app_width=(int)($app_image_width*($app_image_size_percent/100)+2*$app_image_margin);
+            $font_size=$app_image_size_percent<100?"x-small":"small";
+            echo '<style type="text/css"><!--';
+            echo '';
+            echo '--></style>';
+            $appcount=0;
+            do {   
+                //if ($appcount % $column_per_row == 1) echo '<tr>';
                 $appcount++;
+                /* break line depending on screen width (javascript required!) */
+                echo "\n".'<script language="JavaScript">';
+                echo 'width = window.innerWidth ;';
+                // iphone bug?
+                echo 'if ((width<20) || (width>1900)) { width=480;};';
+                echo "x = 30 + ( $app_width * ". ($appcount-1) ." );";
+                echo "xbreak =  (width-30)-180;";
+                //echo 'alert("[x="+x+",width="+width+",xbreak="+xbreak+"]");';
+                echo 'if (x>xbreak ) { document.write("</tr><tr>");}';
+                echo "</script>\n";
+                
+                
+                
+                if ($row['active']=="no")           $bgcolor=GREY;  // inactive
+                elseif ($row['gdc_send']=="yes")    $bgcolor=BLUE;  // GDC sending
+                else                                $bgcolor=WHITE; // normal
+                    
+                // set text to white or dark grey depending on bgcolor
+                $textcolor=((int)("0x".$bgcolor<0x777777))?"ffffff":"000000"; 
+                
+                echo '<td width="'.($app_width).'" class="app-cell" '.
+                     "style=\"background-color:#$bgcolor;\">";
+
+                //echo '<a href="'.$env["myurl"].'?action=configuredevice&device_id='.$row['id'].'">';
+                echo '<a href="'.$env["myurl"].'?action=configuredevice&device_id='.$row['id'];
+                echo '" style="color:#'.$textcolor.';">';
+            
+                echo '<div class="app-cell-top" style="height:'.$app_image_size.'px;">';
+                echo '<img src="'.$env["baseurl"].'/gdcbox/apps/'.$row[0].'/'.$row[0].'.png" '.
+                            " width=\"$app_image_size\" height=\"$app_image_size\">";
+                echo '</div>';
+                
+                echo '<div class="app-cell-bottom" >';
+                echo '<p style="font-size:'.$font_size.';">'.$row['location'].'</p>';
+                echo '<p style="font-size:'.$font_size.';">'.$row['name'].'</p>';
+                echo '</div>';
+                
+                echo '</a>';
+    
+                echo '</td>'; // end of app-display
+                //if ($appcount % $column_per_row == 0) echo '</tr>';
                 
             }  while ($row = $query->fetch() );
-            if ($appcount % $columns != 0) echo '</tr>';
-            echo "</table>\n";
+            //if ($appcount % $column_per_row != 0) echo '</tr>';
+            echo "</tr>";
+            
+            echo "</table></p>\n";
         }
-        //echo '</table>';
-        echo '</p>';
-        echo '<p><a href="'.$env["myurl"].'?action=makenewdevice">Make new Device</a></p>';
+
+        // make a new device or go to appstore?
         $query = $pdo->prepare("SELECT count(*) FROM generic_devices");
         $query->execute();
         $row = $query->fetch();
+        
+        if ($row[0]>=1)
+            echo '<p><a href="'.$env["myurl"].'?action=makenewdevice">Make new Device</a></p>';
+
         switch ($row[0]) {
             case 0: echo '<p>Currently there is <b>no app</b> installed.<br>'; break;
             case 1: echo '<p>Currently there is <b>one app</b> installed.<br>'; break;
             default: echo '<p>Currently there are <b>'.$row[0].' apps</b> installed. '; 
         }
         echo 'Goto <a href="'.$env["myurl"].'?action=appstore">GDCBox AppStore</a> to manage your Apps.</p>';
+    
+        echo "</div><p></p>";
+        
+        echo '<div data-role="header" data-theme="d"><h1>Operation Mode</h1></div>';
+        echo '<div class="ui-body ui-body-d">';
 
-        echo '<h2>Operation Mode</h2>';
         $cronjobs=(int)shell_exec('crontab -l| grep gdcbox |wc -l');
-        echo '<table boder="0"><tr>';
-        echo '<td>GDCBox is <span style="color:'.($cronjobs>0?'green">':'red">not').' running.</span></td>';
+
+        echo '<tr><td>GDCBox is <span style="color:'.($cronjobs>0?'green">':'red">not').' running.</span></td></tr>';
         // start/stop button
-        echo '<td><form action="'.$env["myurl"].'" method="get">';
+        echo '<table boder="0">';
+        echo '<tr><td><form action="'.$env["myurl"].'" method="get">';
         echo '<input type="hidden" name="action" value="gdcbox_'.($cronjobs>0?'stop':'start').'">';
         echo '<input type="submit" value=" '.($cronjobs>0?'Stop':'Start').' "></form></td>';
         // when running, add restart-button
@@ -199,32 +292,37 @@
             echo '<input type="hidden" name="action" value="gdcbox_restart">';
             echo '<input type="submit" value=" Restart "></form></td>';
         }
+        echo "</tr>";
         echo "</table></p>";
+        echo "</div><p></p>";
         
-        echo '<h2>GDCBox System Information</h2>';
-        echo '<p><table border="1">';
-        echo '<tr><td>Current Date & Time</td><td> <b>'.date("Y-m-d H:i:s").'</b></td></tr>';
+        echo '<div data-role="header" data-theme="d"><h1>GDCBox System Information</h1></div>';
+        echo '<div class="ui-body ui-body-d">';
+        echo '<p><table border="0" style="font-size:small;">';
+        echo '<tr><td align="right">Current Date & Time</td><td> <b>'.date("Y-m-d H:i:s").'</b></td></tr>';
         $data = shell_exec('uptime');
         $uptime = explode(' up ', $data);
         $uptime = explode(',', $uptime[1]);
         $uptime = $uptime[0].', '.$uptime[1];
-        echo '<tr><td>Uptime</td><td> <b>'.$uptime.'</b></td></tr>';
-        echo '<tr><td>IP-Address</td><td><b>'.$_SERVER['SERVER_ADDR'].'</b></td></tr>';
-        echo '<tr><td>Current User</td><td><b>'.shell_exec('whoami').'</b></td></tr>';
-
-        echo "</table></p>\n";
+        echo '<tr><td align="right">Uptime</td><td> <b>'.$uptime.'</b></td></tr>';
+        echo '<tr><td align="right">IP-Address</td><td><b>'.$_SERVER['SERVER_ADDR'].'</b></td></tr>';
+        echo '<tr><td align="right">Current User</td><td><b>'.shell_exec('whoami').'</b></td></tr>';
+        
+        echo "</table></p>";
+        echo "</div><p></p>";
         
         if ($testmode) {
-            echo '<h2>System Testing</h2>';
+            echo '<div data-role="header" data-theme="d"><h1>Development</h1></div>';
+            echo '<div class="ui-body ui-body-d">';
             echo '<ul>';
             echo '<li><a href="'.$env["myurl"].'?action=test-dbdump">Show Database Contents</a></li>';
             echo '<li><a href="'.$env["myurl"].'?action=test-cronjoblogfile">Show Cronjobs-Logfile</a></li>';
             echo '</ul>';
+            echo "</div><p></p>";
         }
-        
+        break; 
 
-
-    } else if ($action=='setdatetime') {
+    case "setdatetime":
 
         echo "<h2>Set Date&Time</h2>\n";
         
@@ -243,9 +341,11 @@
         } else {
             echo "<p>error: Date or Time invalid</p>";   
         }
-        
-    } else if ($action=='appstore') {
 
+        break; 
+
+    case "appstore":
+        
         echo "<h2>GDCBox AppStore</h2>\n";
         
         $ch = curl_init();
@@ -293,8 +393,10 @@
             }
             echo '</table>';
         }
+        break; 
 
-    } else if ($action=='appstore_appinstall') {
+    case "appstore_appinstall":
+
 
         echo "<h2>GDCBox AppStore - Installation</h2>\n";
         
@@ -304,10 +406,11 @@
             echo "<p>error: name or file app is missing</p>";
         } else {
             echo "<p>Downloading App <b>".$file."</b> ... ";
-            $appfile=$env["apppath"]."/".$file;
-            $fp = fopen($appfile, "wb");
+            $filedir=$env["apppath"]."/".$file;
+            $file_gz=$file.".gz";
+            $fp = fopen($env["apppath"]."/$file_gz", "wb");
             if (!$fp) {
-                echo "<p>error: fileopen failed for '".$appfile."'</p>";
+                echo "<p>error: fileopen failed for '".$env["apppath"]."/$file_gz.'</p>";
             } else {
                 $ch = curl_init();
                 curl_setopt($ch, CURLOPT_URL, $env["appstore_url"]."?action=download&appfile=".$file);
@@ -323,10 +426,16 @@
                     fwrite($fp,$httpBody);
                     fclose($fp);
                     echo "done (".strlen($httpBody)." Bytes)</p>";
-                    echo "<p>Installing App <b>".$name."</b> locally (".$appfile.")</p>";
-                    require_once($appfile);
+                    echo "<p>decompressing... (";
+                    $shell_cmd="cd ".$env["apppath"]." && tar zxf ./".$file_gz;
+                    shell_exec($shell_cmd);
+                    echo $shell_cmd.") ... done<p>";
+                    
+                    echo "<p>Installing App <b>".$name."</b> locally ($filedir/$file.inc)</p>";
+                    require_once("$filedir/$file.inc");
                     // classname ist filename ohne endung!
-                    $classname=substr($file,0,strpos($file,"."));
+                    //$classname=substr($file,0,strpos($file,"."));
+                    $classname=$file;
                     // jetzt object erstellen...
                     $device = new $classname();
                     // ... und in db als generic_device speichern!
@@ -342,7 +451,9 @@
             }
         }
 
-    } else if ($action=='appstore_appremove') {
+        break; 
+
+    case "appstore_appremove":
 
         $name=isset($_GET['name'])?htmlentities($_GET['name'],ENT_QUOTES):'';
         $name_long=isset($_GET['name_long'])?htmlentities($_GET['name_long'],ENT_QUOTES):'';
@@ -357,7 +468,9 @@
         echo '<input type="hidden" name="name_long" value="'.$name_long.'">';
         echo '<input type="submit" value=" Yep, please! "></form></td></tr>';
 
-    } else if ($action=='appstore_appremove_ok') {
+        break; 
+
+    case "appstore_appremove_ok":
 
         $name=isset($_GET['name'])?htmlentities($_GET['name'],ENT_QUOTES):'';
         $name_long=isset($_GET['name_long'])?htmlentities($_GET['name_long'],ENT_QUOTES):'';
@@ -368,7 +481,9 @@
         $device->removeGenericDeviceFromDB($name);
         echo "<p>...done. App is removed";
 
-    } else if ($action=='makenewdevice') {
+        break; 
+
+    case "makenewdevice":
 
         echo '<h2>Make new Device</h2>';
         echo '<p>Device Apps available on this GDCBox:</p>';
@@ -402,7 +517,9 @@
         }
         echo '<p>Device not found? Check the <a href="'.$env["myurl"].'?action=appstore">GDCBox AppStore</a></p>';
 
-    } else if ($action=='makenewdevice_ok') {
+        break; 
+
+    case "makenewdevice_ok":
 
         $name=isset($_GET['name'])?htmlentities($_GET['name'],ENT_QUOTES):'';
         $name_long=isset($_GET['name_long'])?htmlentities($_GET['name_long'],ENT_QUOTES):'';
@@ -412,9 +529,10 @@
         echo '<p>Create a new Device of type <b>'.$name_long.'</b> ...</p>';
 
         // get appfile
-        require_once($env["apppath"]."/".$appfile);
+        require_once($env["apppath"]."/$appfile/$appfile.inc");
         // classname ist filename ohne endung!
-        $classname=substr($appfile,0,strpos($appfile,"."));
+        //$classname=substr($appfile,0,strpos($appfile,"."));
+        $classname=$appfile;
         // jetzt object erstellen...
         $device = new $classname();
         $device->setDefaultValues();
@@ -428,7 +546,9 @@
         unset($device);
 
 
-    } else if ($action=='configuredevice') {
+        break; 
+
+    case "configuredevice":
 
         echo '<h2>Configure Device</h2>';
 
@@ -502,7 +622,9 @@
         }
 
 
-    } else if ($action=='configuredevice_ok') {
+        break; 
+
+    case "configuredevice_ok":
 
         echo '<h2>Configure Device</h2>';
         $device_id=getValueFromURLSave('device_id');
@@ -538,7 +660,9 @@
             }
         }
 
-    } else if ($action=='show_system_info') {
+        break; 
+
+    case "show_system_info":
 
         echo '<h2>System Information</h2>';
         $device_id=getValueFromURLSave('device_id');
@@ -552,10 +676,11 @@
         $row = $query->fetch();
         // load dynamic device app code
         $appfile=$row[0];
-        require_once($env["apppath"]."/".$row[0]);
+        require_once($env["apppath"]."/".$row[0]."/".$row[0]);
  
         // instantiate new device object
-        $classname=substr($appfile,0,strpos($appfile,"."));
+        //$classname=substr($appfile,0,strpos($appfile,"."));
+        $classname=$appfile;
         $device=new $classname();
         $device->loadDeviceFromDB($device_id);
         if ($device->isLoaded()) {
@@ -566,7 +691,9 @@
         echo '<form><input type="button" VALUE=" Close " onClick="top.close();"></form>';
 
 
-    } else if ($action=='removedevice') {
+        break; 
+
+    case "removedevice":
 
         echo '<h2>Remove Device</h2>';
 
@@ -576,7 +703,9 @@
         $device->removeDeviceFromDB($device_id);
         echo '<p>Device removed.</p>';
 
-    } else if ($action=='gdcbox_start') {
+        break; 
+
+    case "gdcbox_start":
 
         echo '<h2>Starting GDCBox</h2>';
         
@@ -588,14 +717,18 @@
         else
             echo '<p>Nothing to be started. Install or activate devices first.<p>';
 
-    } else if ($action=='gdcbox_stop') {
+        break; 
+
+    case "gdcbox_stop":
 
         echo '<h2>Stopping GDCBox</h2>';
         cron_stop();
         echo "<p>All Device Apps stopped.</p>";
         echo "<p>GDCBox stopped.</p>";
         
-    } else if ($action=='gdcbox_restart') {
+        break; 
+
+    case "gdcbox_restart":
         
         echo '<h2>Restarting GDCBox</h2>';
         cron_stop();
@@ -606,7 +739,9 @@
         else
             echo '<p>Nothing to be restarted. Install devices first.<p>';
 
-    } else if ($action=='gdcbox-info') {
+        break; 
+
+    case "gdcbox-info":
 
         echo '<h3>About GDCBox</h3>';
         echo '<p>The GDCBox ... </p>';
@@ -614,7 +749,9 @@
         echo '<p>GDCBox Version: '.$version.'</p>';
         echo '<p">The GDCBox is a Product of Ondics GmbH</p>';
 
-    } else if ($action=='test-dbdump') {
+        break; 
+
+    case "test-dbdump":
 
         function dbdump($dbtable) {
             global $pdo;
@@ -641,30 +778,44 @@
         dbdump("device_configs");
         dbdump("device_values");
     
-    } else if ($action=='test-cronjoblogfile') {
+        break; 
+
+    case "test-cronjoblogfile":
         echo '<h3>Cronjob-Logfile</h3>';
         echo "<p>Last 20 Lines of ".$env["cronjob_logfile"]."</p>\n";
         echo '<span style="font-size:smaller"><pre><code>';
         echo htmlentities(shell_exec("tail -n 20 ". $env["cronjob_logfile"]));
         echo "</code></pre></span>";
+        
+    default:
+    
+        echo "<p>ups...</p>";
+        
     }
+    
 
     //$_SESSION['lastaction']=$action;  // speichern, um bei reloads dopplung zu verhindern
     
     if ( $action != 'main' )
         echo '<p><a href="'.$env["myurl"].'?action=main">Back</a></p>';
     
-
+    // jquery: start content here
+    echo '</div><!-- /content -->';
+    
     // db-connectivity schlieﬂen
     unset($pdo);
     
-    echo '<table width="80%" border="0" style="font-size:smaller">';
-    echo '<tr><td colspan="3"><hr></td></tr>';
-    echo '<tr><td align="left">'.date("H:i").'</td>';
-    echo '<td align="center">'.($testmode?'Test':'').'</td>';
-    echo '<td align="right"><a href="'.$env["myurl"].'?action=gdcbox-info">About GDCBox</a></td></tr>';
+    echo '<div data-role="footer"  data-theme="b">';
+    echo '<table width="90%" align="center" border="0" style="font-size:smaller">';
+    echo '<tr><td align="left" width="33%">'.date("H:i").'</td>';
+    echo '<td align="center" width="33%">'.($testmode?'Test':'').'</td>';
+    echo '<td align="right" width="33%"><a href="'.$env["myurl"].'?action=gdcbox-info">About GDCBox</a></td></tr>';
     echo (($testmode && $testmsg)?'<tr><td colspan="3" align="left">'.$testmsg.'</td></tr>':'');    
     echo '</table>';
+    echo '</div><!-- /footer -->';
+    
+    echo '</div><!-- /page -->';
+
 ?>
 </body>
 </html>

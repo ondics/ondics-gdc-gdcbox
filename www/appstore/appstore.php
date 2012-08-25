@@ -10,7 +10,7 @@
     // 'platforms' has format "platform1,platform2,..." or "ANY" if platform independend
     // supported platforms for gdcbox are defined in platforms.inc
     $applist=array();
-    foreach(glob('./apps/*.inc') as $file) {
+    foreach(glob('./apps/*/*.inc') as $file) {
         //echo "<p>file=[$file]</p>";
         //require_once($file);
         $file_content=file_get_contents($file);
@@ -50,7 +50,11 @@
             echo json_encode($applist_platform);
             break;
         
-        // download returns requested app as binary file
+        
+        
+        // download returns requested app as binary file package (<file>.zip)
+        // that contains at least ./<file>/<file>.inc
+        // 
         // currently, only one file (*.inc) is transfered
         case 'download':
             $appfile=$_GET["appfile"];
@@ -59,14 +63,24 @@
             while (--$i>=0)
                 if ($applist[$i]['file'] == $appfile) break;
             if ($i<0) die("<p>error: app ".$appfile." nicht gefunden<p>");
+            
+            // is app already zipped? no, zip it first and create <appfile>.gz
+            $app_dir=$env["basepath"]."/appstore/apps/$appfile";
+            if (is_dir($app_dir)) {
+                $shell_cmd="cd ".$env["basepath"]."/appstore/apps && tar zcf ./$appfile.gz ./$appfile";
+                $result=shell_exec($shell_cmd);
+                if ($result!="") die("error zipping");
+            } else
+                die("error: dir not found");
+            $zip_archive_gz=$app_dir.".gz";
             // jetzt download starten            
-            header("Content-Length: ".filesize("./apps/".$appfile));
+            header('Content-Length: '.filesize($zip_archive_gz));
             header('Content-Type: application/x-download');
-            header('Content-Disposition: attachment; filename="'.$appfile.'"');
+            header('Content-Disposition: attachment; filename="'.$appfile.'.gz"');
             header('Content-Transfer-Encoding: binary');
-            $fp=fopen("./apps/".$appfile,"rb");
+            $fp=fopen($zip_archive_gz,"rb");
             while($fp && !feof($fp) && (connection_status()==0)) {
-                print(fread($fp, filesize("./apps/".$appfile)));
+                print(fread($fp, filesize($zip_archive_gz)));
                 flush();
             }
             fclose($fp);

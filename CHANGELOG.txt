@@ -1,6 +1,7 @@
 Changelog
 =========
 
+26.8.2012: Apps mit Bildern, GUI mit JQuery
 24.8.2012: Gleichzeitiges Schreiben der Werte in die Datenbank
 22.8.2012: Portierung auf den Raspberry PI
 21.8.2012: Attribute bei bei den Config-Values (z.B. invisible)
