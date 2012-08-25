@@ -1,0 +1,50 @@
+/*<style type="text/css">*/
+
+/*body {
+    font: 15px "Trebuchet MS",Verdana,sans-serif;
+}*/
+
+.app-table {
+    border-style:none;
+    border-spacing:10px;
+    margin:5px;
+    border-collapse:separate;
+}
+
+.app-table td {
+    padding: 2px;
+    /*width:150px;*/
+    vertical-align: top;
+    text-align: center;
+    overflow:hidden;
+}
+
+.app-cell {
+    background: #fff ;
+}
+
+.app-cell a:link, a:visited, a:hover, a:active {
+    text-decoration: none;
+    border:none;
+    color: inherit;
+}
+
+
+.app-cell-top {
+    vertical-align: top;
+    margin: 4px 2px;
+    height:114px;
+}
+
+.app-cell-bottom {
+    height:2.5em;
+}
+
+.app-cell-bottom p {
+    margin: 0em 0px;
+    font-size: small;
+    text-shadow: none;
+    font-weight: normal;
+}
+
+/*</style>*/
