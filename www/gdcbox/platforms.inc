@@ -1,7 +1,7 @@
 <?php
 
     $version="2.0a";
-    $testmode=true; // einblenden diversen Testhilfen ("Test" in Footer, DB-Display)
+    $testmode=false; // einblenden diversen Testhilfen ("Test" in Footer, DB-Display)
     $testmsg="";     // wird eingeblendet im footer
 
     // determine platform
