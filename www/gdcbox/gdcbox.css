@@ -1,8 +1,9 @@
 /*<style type="text/css">*/
 
-/*body {
+body p {
     font: 15px "Trebuchet MS",Verdana,sans-serif;
-}*/
+    font-size:small;
+}
 
 .app-table {
     border-style:none;
