@@ -6,13 +6,19 @@
     */
 
 
+    // begin session handling
+    session_start();
+    $arySessionVars=array('dev-mode','lastaction');
+    foreach( $arySessionVars as $var) {
+        if (!isset($_SESSION[$var])) $_SESSION[$var] = "";
+    }
+
     require_once("../gdcbox/platforms.inc");
     require_once($env["classinc"]);
 
     // datenbankzugriff herstellen
     if (! ($pdo=new PDO('sqlite:'.$env["database"])) ) {
-        echo "<html><body>Fehler: DB-Zugriff</body></html>";
-        exit;
+        die("<html><body>error: db open</body></html>");
     }
     
     //////////////////////////////////////////////
@@ -87,7 +93,7 @@
     echo '<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">';
     echo '<head>';
     echo '<title>GDCBox</title>';
-    
+    echo '<meta charset="utf-8">';
     //echo '<meta name="viewport" content="width=device-width, initial-scale=1"> ';
     //echo '<meta name="viewport" > ';
     //echo '<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no">';
@@ -108,8 +114,22 @@
 
     // jquery: Header of Page
     echo '<div data-role="header" data-position="fixed" data-theme="b">';
+    // there are actions where "back" should be home!
+    $actionswithonlyhome=array('appstore_appinstall','appstore_appremove_ok',
+                               'makenewdevice_ok','configuredevice_ok','removedevice',
+                               'gdcbox_start','gdcbox_stop','devmode-toggle','');
+    if ($action!="main") {
+        if (!in_array($action,$actionswithonlyhome))
+            echo '<a href="'.$env["myurl"].'" data-icon="back" data-rel="back">Back</a>';
+        echo '<a href="'.$env["myurl"].'" data-icon="home">Home</a>';
+    }
     echo '<h1>GDCBox</h1>';
     echo '</div><!-- /header -->';
+/*    
+    echo '<div data-role="header" data-position="fixed" data-theme="b">';
+    echo '<h1>GDCBox</h1>';
+    echo '</div><!-- /header -->';
+*/
 
     // jquery: content
     echo '<div data-role="content" data-theme="b">';
@@ -145,7 +165,7 @@
         
 
         // display all devices installed ("app-style")
-        echo '<div data-role="header" data-theme="d"><h1>Installed Devices</h1></div>';
+        echo '<div data-role="header" data-theme="d"><h1>Devices</h1></div>';
         echo '<div class="ui-body ui-body-d">';
         
         echo '<p style="font-size:small;">Devices available on this GDCBox (sort by ';
@@ -172,7 +192,8 @@
         if (!$row) {
             echo '<p>No devices installed<p>';
         } else {
-            // background color of app square
+        
+            // background color of apps
             define("GREEN","65e080");
             define("WHITE","ffffff");
             define("BLUE","6899d3");
@@ -186,28 +207,26 @@
             echo '<td width="20" bgcolor="#'.BLUE.'"></td><td>GDC active</td>';
             echo '</tr></tbody></table>';
             echo '<p></p>';
-            
+        
             echo '<p><table class="app-table"><tr>';
-
+    
             // layouting: one app needs width of image + 2 x margin + 30x left margin
             // -> break, when width is reached
             $app_image_width=114;
             $app_image_margin=5;
-            //$app_image_size_percent=100;
+            // make layout a little responsive (iphone/android get little icons
             if (stripos($_SERVER['HTTP_USER_AGENT'],"android") ||
                 stripos($_SERVER['HTTP_USER_AGENT'],"iPhone"))
                 $app_image_size_percent=50;
             else
                 $app_image_size_percent=100;
+            
             $app_image_size=(int)($app_image_width*($app_image_size_percent/100));
             $app_width=(int)($app_image_width*($app_image_size_percent/100)+2*$app_image_margin);
             $font_size=$app_image_size_percent<100?"x-small":"small";
-            echo '<style type="text/css"><!--';
-            echo '';
-            echo '--></style>';
+
             $appcount=0;
             do {   
-                //if ($appcount % $column_per_row == 1) echo '<tr>';
                 $appcount++;
                 /* break line depending on screen width (javascript required!) */
                 echo "\n".'<script language="JavaScript">';
@@ -220,15 +239,13 @@
                 echo 'if (x>xbreak ) { document.write("</tr><tr>");}';
                 echo "</script>\n";
                 
-                
-                
                 if ($row['active']=="no")           $bgcolor=GREY;  // inactive
                 elseif ($row['gdc_send']=="yes")    $bgcolor=BLUE;  // GDC sending
                 else                                $bgcolor=WHITE; // normal
-                    
+                
                 // set text to white or dark grey depending on bgcolor
                 $textcolor=((int)("0x".$bgcolor<0x777777))?"ffffff":"000000"; 
-                
+            
                 echo '<td width="'.($app_width).'" class="app-cell" '.
                      "style=\"background-color:#$bgcolor;\">";
 
@@ -238,27 +255,26 @@
             
                 echo '<div class="app-cell-top" style="height:'.$app_image_size.'px;">';
                 echo '<img src="'.$env["baseurl"].'/gdcbox/apps/'.$row[0].'/'.$row[0].'.png" '.
-                            " width=\"$app_image_size\" height=\"$app_image_size\">";
+                        " width=\"$app_image_size\" height=\"$app_image_size\">";
                 echo '</div>';
-                
+            
                 echo '<div class="app-cell-bottom" >';
                 echo '<p style="font-size:'.$font_size.';">'.$row['location'].'</p>';
                 echo '<p style="font-size:'.$font_size.';">'.$row['name'].'</p>';
                 echo '</div>';
-                
+            
                 echo '</a>';
     
                 echo '</td>'; // end of app-display
-                //if ($appcount % $column_per_row == 0) echo '</tr>';
                 
             }  while ($row = $query->fetch() );
             //if ($appcount % $column_per_row != 0) echo '</tr>';
             echo "</tr>";
-            
+        
             echo "</table></p>\n";
         }
 
-        // make a new device or go to appstore?
+        // display "make a new device or go to appstore?"
         $query = $pdo->prepare("SELECT count(*) FROM generic_devices");
         $query->execute();
         $row = $query->fetch();
@@ -274,13 +290,25 @@
         echo 'Goto <a href="'.$env["myurl"].'?action=appstore">GDCBox AppStore</a> to manage your Apps.</p>';
     
         echo "</div><p></p>";
+
+        // development-mode?
+        if ($_SESSION['dev-mode']=="on") {
+            echo '<div data-role="header" data-theme="e"><h1>Development</h1></div>';
+            echo '<div class="ui-body ui-body-d">';
+            echo '<ul>';
+            echo '<li>Show <a href="'.$env["myurl"].'?action=test-dbdump">Database Contents</a> (database dump)</li>';
+            echo '<li>Show <a href="'.$env["myurl"].'?action=test-cronjoblogfile">Logfile of cron-Jobs</a></li>';
+            echo '</ul>';
+            echo '<p>You can <a href="'.$env["myurl"].'?action=userapp-upload">upload your own apps</a> to the GDCBox<p>';
+            echo "</div><p></p>";
+        }
         
-        echo '<div data-role="header" data-theme="d"><h1>Operation Mode</h1></div>';
+        echo '<div data-role="header" data-theme="d"><h1>Operation</h1></div>';
         echo '<div class="ui-body ui-body-d">';
 
         $cronjobs=(int)shell_exec('crontab -l| grep gdcbox |wc -l');
 
-        echo '<tr><td>GDCBox is <span style="color:'.($cronjobs>0?'green">':'red">not').' running.</span></td></tr>';
+        echo '<tr><td><p>GDCBox is <span style="color:'.($cronjobs>0?'green">':'red">not').' running.</span></p></td></tr>';
         // start/stop button
         echo '<table boder="0">';
         echo '<tr><td><form action="'.$env["myurl"].'" method="get">';
@@ -311,15 +339,6 @@
         echo "</table></p>";
         echo "</div><p></p>";
         
-        if ($testmode) {
-            echo '<div data-role="header" data-theme="d"><h1>Development</h1></div>';
-            echo '<div class="ui-body ui-body-d">';
-            echo '<ul>';
-            echo '<li><a href="'.$env["myurl"].'?action=test-dbdump">Show Database Contents</a></li>';
-            echo '<li><a href="'.$env["myurl"].'?action=test-cronjoblogfile">Show Cronjobs-Logfile</a></li>';
-            echo '</ul>';
-            echo "</div><p></p>";
-        }
         break; 
 
     case "setdatetime":
@@ -346,10 +365,21 @@
 
     case "appstore":
         
-        echo "<h2>GDCBox AppStore</h2>\n";
-        
+        // if dev-mode then use local appstore        
+        if ($_SESSION['dev-mode']!="on") {
+            $appstore_url=$env["appstore_url"];
+            $title="Official GDCBox AppStore";
+        }
+        else {
+            $appstore_url="http://localhost".$env["baseurl"]."/appstore/appstore.php";
+            $title="Local AppStore for Development";
+        }
+        echo "<h2>$title</h2>\n";
+
+        $appstore_url.="?action=applist&machine_os=".$machine_os;
+        echo "<p>url=$appstore_url</p>";
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $env["appstore_url"]."?action=applist&machine_os=".$machine_os);
+        curl_setopt($ch, CURLOPT_URL, $appstore_url);
         curl_setopt($ch, CURLOPT_HEADER, false);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY); 
@@ -368,43 +398,63 @@
             */
             echo '<table border="1">';
             echo '<tr><th>App</th><th>Version</th><th>Actions</th></tr>';
+            $appcount=0;
             foreach ($applist as $app ) {
                 echo '<tr><td>'.$app['name'].'</td><td>'.$app['version'].'</td>';
+                echo '<td >';
                 $query = $pdo->prepare("SELECT name,name_long FROM generic_devices ".
                                        "WHERE name='".$app['name']."'");
                 $query->execute();
                 $row = $query->fetch();
                 // is app already installed?
-                if ($row) {  
+                if ($row) {
                     // yes: add action "remove"
-                    echo '<td><form action="'.$env["myurl"].'" method="get">';
+                    echo '<form action="'.$env["myurl"].'" method="get">';
                     echo '<input type="hidden" name="action" value="appstore_appremove">';
                     echo '<input type="hidden" name="name" value="'.$app['name'].'">';
                     echo '<input type="hidden" name="name_long" value="'.$row['name_long'].'">';
-                    echo '<input type="submit" value=" Remove... "></form></td></tr>';
+                    echo '<input type="submit" value=" Remove... "></form>';
                 } else {
                     // no: add action "download&install"
-                    echo '<td><form action="'.$env["myurl"].'" method="get">';
+                    echo '<form action="'.$env["myurl"].'" method="get">';
                     echo '<input type="hidden" name="action" value="appstore_appinstall">';
                     echo '<input type="hidden" name="name" value="'.$app['name'].'">';
                     echo '<input type="hidden" name="file" value="'.$app['file'].'">';
-                    echo '<input type="submit" value=" Download & Install "></form></td></tr>';                
+                    echo '<input type="submit" value=" Download & Install "></form>';                
                 }
+                if ($_SESSION['dev-mode']=="on") {
+                    echo '<form action="'.$env["myurl"].'" method="get">';
+                    echo '<input type="hidden" name="action" value="userapp-publish">';
+                    echo '<input type="hidden" name="name" value="'.$app['name'].'">';
+                    echo '<input type="hidden" name="file" value="'.$app['file'].'">';
+                    echo '<input type="submit" value=" Publish this App "></form>';                
+                }
+                echo '</td></tr>';
+                $appcount++;
             }
             echo '</table>';
+            if ($appcount==0 && $_SESSION['dev-mode']=="on")
+                echo "<p>No Apps here? You are in Development Mode ".
+                     "and look in your local Appstore!</p>";
         }
         break; 
 
     case "appstore_appinstall":
 
 
-        echo "<h2>GDCBox AppStore - Installation</h2>\n";
+        echo "<h2>AppStore - Installation</h2>\n";
         
         $name=isset($_GET['name'])?htmlentities($_GET['name'],ENT_QUOTES):'';
         $file=isset($_GET['file'])?htmlentities($_GET['file'],ENT_QUOTES):'';
         if ($name=="" || $file=="") {
             echo "<p>error: name or file app is missing</p>";
         } else {
+            // if dev-mode then use local appstore        
+            if ($_SESSION['dev-mode']!="on")
+                $appstore_url=$env["appstore_url"];
+            else
+                $appstore_url="http://localhost".$env["baseurl"]."/appstore/appstore.php";
+
             echo "<p>Downloading App <b>".$file."</b> ... ";
             $filedir=$env["apppath"]."/".$file;
             $file_gz=$file.".gz";
@@ -412,8 +462,9 @@
             if (!$fp) {
                 echo "<p>error: fileopen failed for '".$env["apppath"]."/$file_gz.'</p>";
             } else {
+                $appstore_url .= "?action=download&appfile=".$file;
                 $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, $env["appstore_url"]."?action=download&appfile=".$file);
+                curl_setopt($ch, CURLOPT_URL, $appstore_url);
                 curl_setopt($ch, CURLOPT_HEADER, false);
                 curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
                 curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY); 
@@ -538,7 +589,6 @@
         $device->setDefaultValues();
         // ... und in db als generic_device speichern!
         $id=$device->createNewDeviceInDB();
-        echo "done</p>";
         
         echo '<p>...done. Device can be <a href="'.$env["myurl"].
              '?action=configuredevice&device_id='.$id.'">configured</a> now.</p>';
@@ -557,26 +607,24 @@
         $device=new Device();
         $device->loadDeviceFromDB($device_id);
         
-        // remove device button
-        echo '<p><form action="'.$env["myurl"].'" method="get">';
-        echo '<input type="hidden" name="action" value="removedevice">';
-        echo '<input type="hidden" name="device_id" value="'.$device->device_values['id'].'">';
-        echo '<input type="submit" value=" Remove Device "></form></p>';
-        
+        echo "<p>Don't need this device anymore? Then ";
+        echo '<a href="'.$env["myurl"].'?action=removedevice&device_id=';
+        echo $device->device_values['id'].'">remove it</a> (Attention: configuration for ';
+        echo 'this device will be lost!).</p>';
+
         // show device params
+        echo 'This device uses the app <b>'.$device->device_values['generic_device_name'].'.</p>';
         echo '<form action="'.$env["myurl"].'" method="get">';
         echo '<input type="hidden" name="action" value="configuredevice_ok">';
         echo '<input type="hidden" name="device_id" value="'.$device_id.'">';
-        echo '<table border="1">';
-        echo '<tr><th>Parameter</th><th>Value</th></tr>';
+        echo '<table border="0">';
+        //echo '<tr><th>Parameter</th><th>Value</th></tr>';
         foreach ($device->device_values as $key => $value) {
             echo "<tr>";
             switch ($key) {
-                case 'id':
-                    echo '<td>'.$key.'</td><td bgcolor="#ddd">'.$value.'</td>';break;
+                case 'id': 
                 case 'generic_device_name':
-                    //echo '<td>Device App</td><td><a href="xxx">'.$value.'</a></td>';break;
-                    echo '<td>Device App</td><td bgcolor="#ddd">'.$value.'</td>';break;
+                    break;
                 default:
                     echo '<td>'.$key.'</td><td><input type="text" size="50" name="'.$key.
                          '" value="'.$value.'"></td>';
@@ -747,9 +795,182 @@
         echo '<p>The GDCBox ... </p>';
         echo '<p>Questions? Please check the <a href=".$baseurl."/gdcbox/faq.html>GDCBox FAQ</a></p>';
         echo '<p>GDCBox Version: '.$version.'</p>';
-        echo '<p">The GDCBox is a Product of Ondics GmbH</p>';
+        echo '<p>Do you want to develop apps? Read our Howto and continue with Development-Mode. ';
+        $dev_mode= $_SESSION['dev-mode']=="on";
+        echo 'Development Mode is currently switched '.($dev_mode?'on':'off').'</p>';
+        echo '<p><a href="'.$env["myurl"].'?action=devmode-toggle&devmode=';
+        echo ((!$dev_mode)?'on':'off').'" data-role="button">';
+        echo 'Switch '.((!$dev_mode)?'on':'off').' Development Mode</a></p>';
+        echo '<p></p>';
+
+        echo '<p">The GDCBox is a Product of <a href="http://ondics.de">Ondics GmbH</a>.';
+        echo '(C) 2012, Ondics GmbH. All rights reserved.</p>';
 
         break; 
+
+    case "devmode-toggle":
+
+        echo '<h2>Development Mode</h2>';
+        $dev_mode=getValueFromURLSave('devmode');
+        if ($dev_mode!="on") $dev_mode="off";
+        $_SESSION['dev-mode'] = ($dev_mode=="on")?'on':'off';
+        echo 'Development Mode is now switched to <b>'.($dev_mode=="on"?'on':'off').'</b></p>';
+        break;
+    
+    case "userapp-upload":
+
+        echo '<h3>Upload your new App to GDCBox</h3>';
+        echo '<p>The App must be packed in a zipped tarfile with ending .gz</p>';
+        echo '<p>Please get more help <a href="http://pi-io.com" target="_blank">pi-io.com</a>.</p>';
+        // display form to upload
+        echo '<p><form enctype="multipart/form-data" action="'.$env["myurl"];
+        echo '?action=userapp-upload_ok" method="post" data-ajax="false" >';
+        echo '<table border="0">';
+        echo '<tr><td>App to upload</td>';
+        echo '<td><input type="file" name="userappfile"></td></tr>';
+        echo "</table>";
+        echo '<p><input type="submit" value=" Upload "></form></p>';
+        
+        // some help for developing apps
+        echo '<p></p><p>Some tips for developing your own apps:<ul>';
+        echo '<li>start with an app template. You have to in development mode.</li>';
+        echo '<li>the Appname must be starting with "userapp_" (e.g. userapp_myfirstapp.inc)</li>';
+        echo '<li>put it in a directory named "userapp_myfirstapp/"</li>';
+        echo '<li>when finished development, pack it using "tar zcf ./userapp_myfirstapp.gz ./userapp_myfirstapp"</li>';
+        echo '<li>upload it to your local Appstore (this form)</li>';
+        echo '<li>goto Appstore an install your app.</li>';
+        echo '<li>test, debug (logfiles, database) and run!</li>';
+        echo '<li>if you want to publish your app, tell us.</li>';
+        echo '</ul></p>';
+        break; 
+    
+    case "userapp-upload_ok":
+
+        echo '<h3>Upload your new App to GDCBox</h3>';
+        $appfile=$_FILES['userappfile'];
+        $error="";
+        $uploaddir = $env['basepath'].'/appstore/apps/';
+        $uploadfile = basename($appfile['name']);
+        $uploadpath = $uploaddir . $uploadfile;
+
+        echo "<p>Uploading file <b>".$uploadfile ."</b> ";
+        echo "(".filesize($appfile['tmp_name'])." Bytes).</p>";
+        // checking ending
+        if (!preg_match("/userapp_[a-zA-Z0-9_]+\.gz/",$uploadfile)) {
+            $error="characters in filename allowed: 0-9, a-z, A-Z, underscore, ".
+                   "Begin: userapp_, Ending: .gz";
+        }
+        // move file to appstore-destination
+        if ($error=="") {
+            if (move_uploaded_file($appfile['tmp_name'], $uploadpath)) {
+                echo "<p>App uploaded.</p>";
+            } else {
+                $error="Upload failed";
+            }
+        }
+        // ok, upload succeeded, now check archive
+        if ($error=="") {
+            $shell_cmd="cd ".$uploaddir.' && tar ztf ./'.$uploadfile;
+            exec($shell_cmd,$cmd_lines);
+            foreach($cmd_lines as $cmd_line) {
+                echo "<p>path checked=$cmd_line</p>";
+                $filenamebegin="./userapp_";
+                if (strncmp($filenamebegin,$cmd_line,strlen($filenamebegin))!=0)
+                    { $error="paths in archive must start with ./userapp"; break;}
+            }
+        }
+        // ok, upload succeeded, now unpack archive
+        if ($error=="") {
+            $shell_cmd="cd ".$uploaddir.' && tar zxf ./'.$uploadfile;
+            shell_exec($shell_cmd);
+        }
+        
+        if ($error=="")
+            echo "<p>Your App is now available from local Appstore!</p>";
+        else
+            echo "<p>Error: $error</p><p>Try again!</p>";
+            
+        
+        break; 
+
+
+    case "userapp-publish":
+
+        echo "<h2>Publish your App</h2>\n";
+        $name=getValueFromURLSave('name');
+        $file=getValueFromURLSave('file');
+        if ($name=="" || $file=="") {
+            echo "<p>error: name or file is missing</p>";
+            break;
+        }
+        if ($_SESSION['dev-mode']!="on") {
+            echo "<p>error: not in dev-mode</p>";
+            break;
+        }
+        echo "<p>You have developed the App <b>$name</b> and want to publish ";
+        echo "this App from your local GDCBox to the official GDCBox Appstore.</p>";
+        echo '<p>Please fill out the form to start publishing.</p>';
+        echo '<p><form action="'.$env["myurl"].'?action=userapp-publish_ok" method="get">';
+        echo '<input type="hidden" name="appname" value="'.$name.'">';
+        echo '<input type="hidden" name="appfile" value="'.$file.'">';        
+        echo '<p><label for="username">Your Name</label>';
+        echo '<input name="username" type="text" size="50" maxlength="50"></p>';
+        echo '<p><label for="email">Your Email</label>';
+        echo '<input name="email" type="text" size="50" maxlength="50"></p>';
+        echo '<p><label for="description">Description of your App</label>';
+        echo '<textarea name="description" cols="25" rows="5" placeholder="..."></textarea></p>';
+        
+        echo '<p>By publishing, you agree to put the App in the Official GDC AppStore ';
+        echo 'so everybody can download and use it. Your name will be provided with ';
+        echo 'the App. Your Email-Adress will just be used by us to contact you and ';
+        echo 'will not be published. You will be contacted from us soon after ';
+        echo 'having published your app. Thanks a lot for joining the App developer team.</p> ';
+
+        echo '<p><input type="submit" value=" Publish my App now! "></form></p>';
+        
+        echo '<p>Questions? We like to help you with ';
+        echo '<a href="email:support@ondics.de">support@ondics.de</a></p>';        
+
+        break;
+    
+    case "userapp-publish_ok":
+
+        echo "<h2>Publish your App</h2>\n";
+    
+        $appname=getValueFromURLSave('appname');
+        $appfile=getValueFromURLSave('appfile');
+        $username=getValueFromURLSave('username');
+        $email=getValueFromURLSave('email');
+        $description=getValueFromURLSave('description');
+        
+        // publish by uploading to appstore
+        $publish_url = $env['appstore_url'].'?action=userapp-publish';
+        // packed file is available since user has it installed, too
+	$filepath = $env['basepath'].'/appstore/apps/'.$appfile.".gz";
+
+	$post_fields = array('appname' => $appname, 'username' => $username,
+                      'email' => $email, 'description' => $description,
+                      'file_contents'=>'@'.$filepath);
+        // now send!        
+        $ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL,$publish_url);
+	curl_setopt($ch, CURLOPT_POST,1);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $post_fields);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY); 
+        curl_setopt($ch, CURLOPT_USERPWD, $env["appstore_user"].':'.$env["appstore_pass"]); 
+	$result=curl_exec ($ch);
+        $info = curl_getinfo($ch);
+        var_dump($info);
+	if ($result === false || $info['http_code'] != 200) {
+            echo "<p>Error: $result (".curl_error($ch)?curl_error($ch):"unknown".")</p>";
+            break;
+	}
+	curl_close ($ch);            
+        echo "<p>Thank you for your efforts and publishing your App!</p> ";
+        echo "<p>We will contact you soon.</p>";
+        
+        break;        
 
     case "test-dbdump":
 
@@ -777,7 +998,6 @@
         dbdump("devices");
         dbdump("device_configs");
         dbdump("device_values");
-    
         break; 
 
     case "test-cronjoblogfile":
@@ -786,7 +1006,8 @@
         echo '<span style="font-size:smaller"><pre><code>';
         echo htmlentities(shell_exec("tail -n 20 ". $env["cronjob_logfile"]));
         echo "</code></pre></span>";
-        
+        break;
+    
     default:
     
         echo "<p>ups...</p>";
@@ -794,10 +1015,12 @@
     }
     
 
-    //$_SESSION['lastaction']=$action;  // speichern, um bei reloads dopplung zu verhindern
+    $_SESSION['lastaction']=$action;  // speichern, um bei reloads dopplung zu verhindern
     
+/*
     if ( $action != 'main' )
-        echo '<p><a href="'.$env["myurl"].'?action=main">Back</a></p>';
+        echo '<p><a href="'.$env["myurl"].'?action=main" data-role="button">Home</a></p>';
+*/
     
     // jquery: start content here
     echo '</div><!-- /content -->';
@@ -806,10 +1029,12 @@
     unset($pdo);
     
     echo '<div data-role="footer"  data-theme="b">';
-    echo '<table width="90%" align="center" border="0" style="font-size:smaller">';
+    echo '<table width="90%" align="center" border="0" style="font-size:small;">';
     echo '<tr><td align="left" width="33%">'.date("H:i").'</td>';
-    echo '<td align="center" width="33%">'.($testmode?'Test':'').'</td>';
-    echo '<td align="right" width="33%"><a href="'.$env["myurl"].'?action=gdcbox-info">About GDCBox</a></td></tr>';
+    echo '<td align="center" width="33%">'.($_SESSION['dev-mode']=="on"?'Development':'');
+    echo ($testmode?"&nbsp;[Testmode]":"").'</td>';
+    echo '<td align="right" width="33%"><a href="'.$env["myurl"].'?action=gdcbox-info" ';
+    echo 'style="color:#fff">About GDCBox</a></td></tr>';
     echo (($testmode && $testmsg)?'<tr><td colspan="3" align="left">'.$testmsg.'</td></tr>':'');    
     echo '</table>';
     echo '</div><!-- /footer -->';

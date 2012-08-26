@@ -85,6 +85,68 @@
             }
             fclose($fp);
             break;
+
+        case 'userapp-publish':
+            
+            $username=isset($_POST['username'])?htmlentities($_POST['username'],ENT_QUOTES):'';
+            $email=isset($_POST['email'])?htmlentities($_POST['email'],ENT_QUOTES):'';
+            $appname=isset($_POST['appname'])?htmlentities($_POST['appname'],ENT_QUOTES):'';
+            $description=isset($_POST['description'])?htmlentities($_POST['description'],ENT_QUOTES):'';
+            
+            if ($username=="" || $email=="" || $description=="") {
+                echo "error: Please fill out all fields";
+                break;
+            }
+
+            $publish_base = "/home/clauss/gdcbox-appstore-incoming/";
+            $publish_dir = $publish_base.date("Ymd-His")."-incoming-app/";
+            if (is_dir($publish_dir)) {
+                echo "error: dir exists.\n";
+                break;
+            }
+            if (!mkdir($publish_dir)) {
+                echo "error: cannot make dir.\n";
+                break;
+            }
+            // first save information about publisher
+            $content =  "New published App\n".
+                        "=================\n".
+                        "published  : ".date("Y-m-d H:i:s")."\n".
+                        "user       : ".$username."\n".
+                        "email      : ".$email."\n".                        
+                        "appname    : ".$appname."\n".
+                        "description\n".
+                        "-----------\n".
+                        wordwrap($description,50)."\n\n".
+                        "Sonstiges\n".
+                        "---------\n";
+            foreach($_SERVER as $key => $value)
+                $content .= $key.' = ['.$value.']'."\n";
+                
+            file_put_contents($publish_dir."readme.txt",$content);
+
+            // then save file
+            $publish_file = $publish_dir . basename($_FILES['file_contents']['name']);
+            if (!move_uploaded_file($_FILES['file_contents']['tmp_name'], $publish_file)) {
+                echo "ok. published.\n";
+            } else {
+                echo "error!\n";
+            }
+            
+            // finally send incoming email
+            $mail_subject="neue gdcapp wurde publiziert";
+            $mail_to="w@ondics.de";
+            $headers   = array();
+            $headers[] = "MIME-Version: 1.0";
+            $headers[] = "Content-type: text/plain; charset=iso-8859-1";
+            $headers[] = "From: GDCBox Appstore <clauss@srv1.ondics.de>";
+            $headers[] = "Reply-To: support@ondics.de";
+            $headers[] = "Subject: {$subject}";
+            $headers[] = "X-Mailer: PHP/".phpversion();
+
+            $result=mail($mail_to, $mail_subject, $content, implode("\r\n", $headers));
+            
+            break;
         
         default:
             die("<p>error in appstore: unknown command</p>");
