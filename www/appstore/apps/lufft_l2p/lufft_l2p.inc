@@ -10,7 +10,7 @@ class lufft_l2p extends Device {
         $this->generic_device_specs['name']='Lufft L2P';
         $this->generic_device_specs['name_long']='Lufft L2P Device. Climatological Measurements.';
         $this->generic_device_specs['description']='Hot. Very hot!';
-        $this->generic_device_specs['appfile']='lufft_l2p.inc';
+        $this->generic_device_specs['appfile']='lufft_l2p';
         $this->device_defaults['description']='OPUS20.THIP oder OPUS20...';
         $this->device_config_defaults['Port']=array('value'=>'52015','attribs'=>'');
         $this->device_config_defaults['L2P-Driver-Path']=array('value'=>'/home/clauss/git-repos/ondics-lufft-opus20/','attribs'=>'');

@@ -9,7 +9,7 @@ class hostping extends Device {
         $this->generic_device_specs['name']='Host Ping';
         $this->generic_device_specs['name_long']='Host Ping';
         $this->generic_device_specs['description']='Prüfung, ob Host mittels Ping erreichbar ist.';
-        $this->generic_device_specs['appfile']='hostping.inc';
+        $this->generic_device_specs['appfile']='hostping';
         $this->device_defaults['description']='Prüfung, ob Host mittels Ping erreichbar ist.';
         $this->device_config_defaults['IP-Address']   =array('value'=>'localhost','attribs'=>'');
         $this->device_config_defaults['NumberRetries']=array('value'=>'5','attribs'=>'');
