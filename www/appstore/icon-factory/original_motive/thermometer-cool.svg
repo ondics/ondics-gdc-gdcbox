@@ -1,0 +1,33 @@
+<?xml version="1.0"?><svg width="640" height="480" xmlns="http://www.w3.org/2000/svg">
+ <title>thermometer hot</title>
+ <metadata id="metadata7">image/svg+xmlThermometer2006-11-06Trent Buck &lt;twb@cyber.com.au&gt;</metadata>
+ <g>
+  <title>Layer 1</title>
+  <g externalResourcesRequired="false" id="svg_22">
+   <title>thermometer</title>
+   <g id="g2984">
+    <path fill="none" fill-opacity="0.75" fill-rule="evenodd" stroke="black" stroke-width="4" stroke-miterlimit="4" id="path2931" d="m516,55l48,0"/>
+    <path fill="none" fill-opacity="0.75" fill-rule="evenodd" stroke="black" stroke-width="4" stroke-miterlimit="4" id="path2935" d="m516,375l48,0"/>
+    <path fill="none" fill-opacity="0.75" fill-rule="evenodd" stroke="black" stroke-width="4" stroke-miterlimit="4" id="path2937" d="m516,215l48,0"/>
+    <path fill="none" fill-opacity="0.75" fill-rule="evenodd" stroke="black" stroke-width="4" stroke-miterlimit="4" id="path2939" d="m516,183l16,0"/>
+    <path fill="none" fill-opacity="0.75" fill-rule="evenodd" stroke="black" stroke-width="4" stroke-miterlimit="4" id="path2941" d="m516,151l16,0"/>
+    <path fill="none" fill-opacity="0.75" fill-rule="evenodd" stroke="black" stroke-width="4" stroke-miterlimit="4" id="path2943" d="m516,119l16,0"/>
+    <path fill="none" fill-opacity="0.75" fill-rule="evenodd" stroke="black" stroke-width="4" stroke-miterlimit="4" id="path2945" d="m516,87l16,0"/>
+    <path fill="none" fill-opacity="0.75" fill-rule="evenodd" stroke="black" stroke-width="4" stroke-miterlimit="4" id="path2947" d="m516,247l16,0"/>
+    <path fill="none" fill-opacity="0.75" fill-rule="evenodd" stroke="black" stroke-width="4" stroke-miterlimit="4" id="path2949" d="m516,279l16,0"/>
+    <path fill="none" fill-opacity="0.75" fill-rule="evenodd" stroke="black" stroke-width="4" stroke-miterlimit="4" id="path2951" d="m516,311l16,0"/>
+    <path fill="none" fill-opacity="0.75" fill-rule="evenodd" stroke="black" stroke-width="4" stroke-miterlimit="4" id="path2953" d="m516,343l16,0"/>
+   </g>
+   <g id="g3023">
+    <rect fill="#ffffff" fill-rule="nonzero" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" ry="16" rx="16" y="23" x="484" height="416" width="32" id="rect2922"/>
+    <rect fill="#ffffff" fill-rule="nonzero" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" y="375" x="484" height="64" width="31.999992" id="rect3021"/>
+    <path fill="#ffffff" fill-rule="nonzero" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" d="m532,439c0,17.673096 -14.326904,32 -32,32c-17.673096,0 -32,-14.326904 -32,-32c0,-17.673126 14.326904,-32 32,-32c17.673096,0 32,14.326874 32,32z" id="path2924"/>
+    <!-- set the height attribute to something between 0 and 10.  Can be floating-point. -->
+    <rect fill="#ffffff" fill-rule="nonzero" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" id="mercury" transform="translate(227, 27) scale(-1) scale(1, 32)" width="32" height="10" x="-289" y="-10.875"/>
+    <path fill="#ffffff" fill-rule="nonzero" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="4" stroke-dashoffset="0" id="rect2968" d="m500,23c-8.864014,0 -16,7.136 -16,16l0,372.28125c-9.564331,5.535095 -16,15.880676 -16,27.71875c0,17.664001 14.335999,32 32,32c17.664001,0 32,-14.335999 32,-32c0,-11.838074 -6.435669,-22.183655 -16,-27.71875l0,-372.28125c0,-8.864 -7.135986,-16 -16,-16z"/>
+   </g>
+   <circle fill="#ff0000" stroke-width="0" cx="500.249999" cy="439.000002" r="30.25" id="svg_18"/>
+   <rect fill="#ff0000" stroke-width="0" x="485.500006" y="212.000085" width="29.499998" height="201.000004" id="svg_20"/>
+  </g>
+ </g>
+</svg>

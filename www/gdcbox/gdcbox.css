@@ -22,6 +22,7 @@ body p {
 
 .app-cell {
     background: #fff ;
+    margin: 0px 15px 0px 0px;
 }
 
 .app-cell a:link, a:visited, a:hover, a:active {
@@ -34,11 +35,10 @@ body p {
 .app-cell-top {
     vertical-align: top;
     margin: 4px 2px;
-    height:114px;
 }
 
 .app-cell-bottom {
-    height:2.5em;
+    text-align: center;
 }
 
 .app-cell-bottom p {

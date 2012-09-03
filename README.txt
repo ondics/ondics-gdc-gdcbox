@@ -11,7 +11,6 @@ TODOs
 -----
 - weitere Apps (Web-Grab-Apps!)
 - WS500 konkret einbinden
-- Installation/Test/Distro für Raspberry PI
 - Anzeige-Geräte einbauen (Aktoren)
 - Versionsnummern
 
