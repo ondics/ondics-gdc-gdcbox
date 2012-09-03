@@ -14,7 +14,6 @@ class rasppi_gpio_sensor extends Device {
         $this->generic_device_specs['description']='Gpio 4 the Win :O';
         $this->generic_device_specs['appfile']='rasppi_gpio_sensor';
         $this->device_defaults['description']='GPIO Pins Connected to Raspberry PI';
-        //$this->device_config_defaults['L2P-Driver-Path']='/home/clauss/git-repos/ondics-lufft-opus20/';
         $this->device_config_defaults['IP-Address']=array('value'=>'localhost','attribs'=>'visible:no');
         $this->device_config_defaults['NumValues']=array('value'=>'1','attribs'=>'visible:no');
         $this->device_config_defaults['GPIO_ADDRESS']=array('value'=>'00','attribs'=>'');  

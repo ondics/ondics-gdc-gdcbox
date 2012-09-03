@@ -14,7 +14,6 @@ class rasppi_i2c_lm75_temperature extends Device {
         $this->generic_device_specs['description']='LM75-App';
         $this->generic_device_specs['appfile']='rasppi_i2c_lm75_temperature';
         $this->device_defaults['description']='LM75-i2c-Sensor connected to Raspberry PI.';
-        //$this->device_config_defaults['L2P-Driver-Path']='/home/clauss/git-repos/ondics-lufft-opus20/';
         $this->device_config_defaults['IP-Address']=array('value'=>'localhost','attribs'=>'');
         $this->device_config_defaults['NumValues']=array('value'=>'1','attribs'=>'visible:no');
         $this->device_config_defaults['0_LM75_Adress']=array('value'=>'0x00','attribs'=>'');  
