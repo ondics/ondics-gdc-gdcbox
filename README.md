@@ -12,6 +12,7 @@ in PHP. GDCBox mainly consists of four parts:
 - the cronjobs collecting data
 - the api and
 - access to the AppStore to dynamiccaly expand your GDCBox
+
 And for the developers there is a local AppStore included to
 test their Apps.
 
@@ -22,6 +23,7 @@ GDCBox can easily expanded by building your own Apps.
 
 
 (C) Ondics GmbH, 2012
+
 
 ##TODOs
 - more Apps (Web-Grab-Apps!)
@@ -39,7 +41,7 @@ GDCBox can easily expanded by building your own Apps.
 > Eine App besteht aus der Datei <app>.inc und liegt im Verzeichnis ./www/appstore/apps/<appname>
 
 ##GDCBox
-Die GDCBox modules are
+The GDCBox modules are
 - the Web-UI (./www/cgi-bin/gdcbox.php)
 - the cronjob-script (./www/gdcbox/gdcbox_cronjob.php).
 - the api (./www/cgi-bin/gdcbox-api.php)
@@ -52,5 +54,7 @@ GDCBox uses a local SQLite (Version 3)
 >- Kopieren einer bestehenden App aus ./appstore/apps
 >- Anpassen der neuen App
 >Fertig!
+
 For more about how to build your own Apps see [here](http://pi-io.com).
+
 
