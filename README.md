@@ -7,11 +7,13 @@ GDCBox helps you to
 - transmit data to the GDC Global Data Cloud Storage
 
 The GDCBox V2 was completely redesigned and rewritten
-in PHP. GDCBox mainly consists of tree parts:
-1. the GDCBox user interface
-2. the cronjobs collecting data
-3. the api
-4. and the AppStore to dynamiccaly expand your GDCBox
+in PHP. GDCBox mainly consists of four parts:
+- the GDCBox user interface
+- the cronjobs collecting data
+- the api and
+- access to the AppStore to dynamiccaly expand your GDCBox
+And for the developers there is a local AppStore included to
+test their Apps.
 
 GDCBox provides hardware specific Apps, e.g. for Raspberry
 PI. get more information about [GDCBox on Raspberry PI at http://pi-io.com](http://pi-io.com).
