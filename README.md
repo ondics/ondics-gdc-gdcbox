@@ -19,7 +19,6 @@ PI. get more information about [GDCBox on Raspberry PI at http://pi-io.com](http
 GDCBox can easily expanded by building your own Apps.
 
 
-
 (C) Ondics GmbH, 2012
 
 ##TODOs
@@ -31,16 +30,11 @@ GDCBox can easily expanded by building your own Apps.
 
 
 ##AppStore
-Der AppStore liegt unter ./www/appstore und ist ein
-REST/JSON-Server, der die Befehle 'applist' (Liste mit
-verfügbaren Apps) und 'download' (Eine App downloaden)
-kennt.
 
-Eine App ist der Code zum Anschluss eines Devices an
-die GDCBox. Bisher werden nur lesende Devices unterstützt
-(z.B. noch keine Laufschrift-Anzeigen oder Aktoren).
-Eine App besteht nur aus der Datei <app>.inc und
-liegt im Verzeichnis ./www/appstore/apps
+> Der AppStore liegt unter ./www/appstore und ist ein REST/JSON-Server,
+> der die Befehle 'applist' (Liste mit verfügbaren Apps) und 'download' (Eine App downloaden) kennt.
+> Eine App ist der Code zum Anschluss eines Devices an die GDCBox. 
+> Eine App besteht aus der Datei <app>.inc und liegt im Verzeichnis ./www/appstore/apps/<appname>
 
 ##GDCBox
 Die GDCBox modules are
@@ -49,12 +43,12 @@ Die GDCBox modules are
 - the api (./www/cgi-bin/gdcbox-api.php)
 GDCBox uses a local SQLite (Version 3)
 
-##Develop new Apps
-Die App-Architektur ist objektorientiert aufgebaut.
-Damit kann sich das Erstellen einer neuen App auf
-das Wesentliche beschränken. Ist eigentich ganz leicht!
-Eine neue App wird am Besten wie folgt erstellt:
-- Kopieren einer bestehenden App aus ./appstore/apps
-- Anpassen der neuen App
-Fertig!
+##Develop your own Apps
+>Die App-Architektur ist objektorientiert aufgebaut. Damit kann sich das Erstellen einer neuen
+>App auf das Wesentliche beschränken. Ist eigentich ganz leicht!
+>Eine neue App wird am Besten wie folgt erstellt:
+>- Kopieren einer bestehenden App aus ./appstore/apps
+>- Anpassen der neuen App
+>Fertig!
+For more about how to build your own Apps see [here](http://pi-io.com).
 
