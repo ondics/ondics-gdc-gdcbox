@@ -26,7 +26,7 @@ GDCBox can easily expanded by building your own Apps.
 
 
 ##TODOs
-- more Apps (Web-Grab-Apps!)
+- more Apps (System-Apps, Web-Grab-Apps, ...)
 - complete App for WS500 
 - control display devices and actors
 - version vontrol of apps
