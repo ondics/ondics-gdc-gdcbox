@@ -118,7 +118,7 @@
     // there are actions where "back" should be home!
     $actionswithnoback=array('appstore_appinstall','appstore_appremove_ok',
                              'makenewdevice_ok','configuredevice_ok','removedevice',
-                             'gdcbox_start','gdcbox_stop','devmode-toggle','show_system_info','');
+                             'gdcbox_start','gdcbox_stop','devmode-toggle','show_system_info','','configuredevice');
     $actionswithnohome=array('show_system_info');
 
     if ($action!="main") {
@@ -1058,7 +1058,7 @@
     // jquery: start content here
     echo '</div><!-- /content -->';
     
-    // db-connectivity schließen
+    // db-connectivity schlieï¿½en
     unset($pdo);
     
     echo '<div data-role="footer"  data-theme="b">';
